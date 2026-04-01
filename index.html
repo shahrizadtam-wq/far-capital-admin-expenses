@@ -128,14 +128,16 @@
     display: inline-flex; align-items: center; padding: 2px 8px;
     border-radius: 20px; font-size: 11px; font-weight: 500;
   }
-  .badge-travel { background: var(--blue-light); color: var(--blue); }
-  .badge-meals { background: #fef6ee; color: #a05c10; }
-  .badge-office { background: var(--accent-light); color: var(--accent); }
-  .badge-software { background: #f3eeff; color: #5b2d9e; }
-  .badge-marketing { background: #feeef5; color: #9e1a5e; }
-  .badge-utilities { background: #eef7f7; color: #0f6e6e; }
-  .badge-professional { background: #eef3fb; color: var(--blue); }
-  .badge-other { background: var(--surface2); color: var(--muted); }
+  .badge-fleet-maint  { background: #eef3fb; color: #1a4b8c; }
+  .badge-fleet-ins    { background: #e8f0eb; color: #1a3a2a; }
+  .badge-fleet-tng    { background: #fef8ee; color: #b8750a; }
+  .badge-pantry       { background: #feeef5; color: #9e1a5e; }
+  .badge-stationery   { background: #f3eeff; color: #5b2d9e; }
+  .badge-cleaning     { background: #eef7f7; color: #0f6e6e; }
+  .badge-it           { background: #e6f1fb; color: #185fa5; }
+  .badge-admin        { background: #f0eeea; color: #444441; }
+  .badge-adhoc        { background: #fdf0ee; color: #c0392b; }
+  .badge-others       { background: #f0eeea; color: #6b6b65; }
 
   .filter-bar { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
   select, input[type=text], input[type=number], input[type=date], textarea {
@@ -230,45 +232,47 @@ const { useState, useEffect, useRef } = React;
 
 /* ─────────────────────────── CONSTANTS ─────────────────────────── */
 const CATEGORIES = [
-  'Travel',
-  'Meals & Entertainment',
-  'Office Supplies',
-  'Software & Subscriptions',
-  'Marketing',
-  'Utilities',
-  'Professional Services',
-  'Other',
+  'Fleet — Maintenance',
+  'Fleet — Insurance & Road Tax',
+  'Fleet — Touch & Go',
+  'Office Inventory — Pantry',
+  'Office Inventory — Stationery',
+  'Office Inventory — Cleaning',
+  'IT Asset Management',
+  'Administration',
+  'Ad Hoc Expenses',
+  'Others',
 ];
 
 const CAT_BADGE = {
-  'Travel': 'badge-travel',
-  'Meals & Entertainment': 'badge-meals',
-  'Office Supplies': 'badge-office',
-  'Software & Subscriptions': 'badge-software',
-  'Marketing': 'badge-marketing',
-  'Utilities': 'badge-utilities',
-  'Professional Services': 'badge-professional',
-  'Other': 'badge-other',
+  'Fleet — Maintenance':           'badge-fleet-maint',
+  'Fleet — Insurance & Road Tax':  'badge-fleet-ins',
+  'Fleet — Touch & Go':            'badge-fleet-tng',
+  'Office Inventory — Pantry':     'badge-pantry',
+  'Office Inventory — Stationery': 'badge-stationery',
+  'Office Inventory — Cleaning':   'badge-cleaning',
+  'IT Asset Management':           'badge-it',
+  'Administration':                'badge-admin',
+  'Ad Hoc Expenses':               'badge-adhoc',
+  'Others':                        'badge-others',
 };
 
 const CHART_COLORS = [
-  '#2d6b47','#1a4b8c','#b8750a','#9e1a5e',
-  '#0f6e6e','#5b2d9e','#a05c10','#5f5e5a',
+  '#2d6b47','#1a4b8c','#0f6e6e','#b8750a',
+  '#9e1a5e','#5b2d9e','#a05c10','#c0392b','#5f5e5a','#185fa5',
 ];
 
 const SAMPLE_DATA = [
-  { id: 1,  date: '2025-01-08', vendor: 'MAS Wings',          amount: 1250.00, category: 'Travel',                    description: 'Flight KL to Sabah, client visit' },
-  { id: 2,  date: '2025-01-15', vendor: "Nando's KLCC",       amount: 186.50,  category: 'Meals & Entertainment',     description: 'Team lunch, 6 pax' },
-  { id: 3,  date: '2025-02-03', vendor: 'Microsoft 365',      amount: 299.00,  category: 'Software & Subscriptions',  description: 'Annual subscription' },
-  { id: 4,  date: '2025-02-20', vendor: 'Waze Ads',           amount: 800.00,  category: 'Marketing',                 description: 'Feb digital campaign' },
-  { id: 5,  date: '2025-03-05', vendor: 'Pos Malaysia',       amount: 45.00,   category: 'Office Supplies',           description: 'Courier & postage' },
-  { id: 6,  date: '2025-03-18', vendor: 'Telekom Malaysia',   amount: 199.00,  category: 'Utilities',                 description: 'Fibre broadband Mar' },
-  { id: 7,  date: '2025-04-10', vendor: 'Grab for Business',  amount: 620.00,  category: 'Travel',                    description: 'Staff transport Apr' },
-  { id: 8,  date: '2025-04-22', vendor: 'Deloitte',           amount: 3500.00, category: 'Professional Services',     description: 'Tax advisory Q1' },
-  { id: 9,  date: '2025-05-07', vendor: 'MPH Books',          amount: 310.00,  category: 'Office Supplies',           description: 'Reference books & stationery' },
-  { id: 10, date: '2025-05-14', vendor: 'Sheraton PJ',        amount: 880.00,  category: 'Meals & Entertainment',     description: 'Client dinner, board meeting' },
-  { id: 11, date: '2025-06-01', vendor: 'Google Workspace',   amount: 156.00,  category: 'Software & Subscriptions',  description: 'Monthly workspace plan' },
-  { id: 12, date: '2025-06-25', vendor: 'AirAsia Business',   amount: 2100.00, category: 'Travel',                    description: 'Team trip Singapore, 3 pax' },
+  { id: 1,  date: '2026-01-08', vendor: 'Petronas',         amount: 320.00,  category: 'Fleet — Maintenance',           description: 'Engine oil & service, Proton X70' },
+  { id: 2,  date: '2026-01-15', vendor: 'Pos Malaysia',     amount: 1800.00, category: 'Fleet — Insurance & Road Tax',   description: 'Road tax renewal, WXX1234' },
+  { id: 3,  date: '2026-02-03', vendor: 'Touch & Go',       amount: 200.00,  category: 'Fleet — Touch & Go',             description: 'TnG reload, company vehicle' },
+  { id: 4,  date: '2026-02-10', vendor: 'Jaya Grocer',      amount: 185.50,  category: 'Office Inventory — Pantry',      description: 'Coffee, tea, snacks for office' },
+  { id: 5,  date: '2026-02-20', vendor: 'MPH',              amount: 95.00,   category: 'Office Inventory — Stationery',  description: 'A4 paper, pens, folders' },
+  { id: 6,  date: '2026-03-05', vendor: 'Ecolab',           amount: 260.00,  category: 'Office Inventory — Cleaning',    description: 'Monthly cleaning supplies' },
+  { id: 7,  date: '2026-03-12', vendor: 'Dell Malaysia',    amount: 4200.00, category: 'IT Asset Management',            description: 'Monitor replacement, finance dept' },
+  { id: 8,  date: '2026-03-18', vendor: 'Lembaga Hasil',    amount: 500.00,  category: 'Administration',                 description: 'Stamp duty, tenancy agreement' },
+  { id: 9,  date: '2026-03-25', vendor: 'Hazloc Solution',  amount: 300.00,  category: 'Ad Hoc Expenses',                description: 'Pest control, unit 15-7 & 15-8' },
+  { id: 10, date: '2026-04-01', vendor: 'Sachenais Food',   amount: 1300.00, category: 'Ad Hoc Expenses',                description: 'Catering, 25 pax, 1 & 2 Apr 2026' },
 ];
 
 /* ─────────────────────────── HELPERS ─────────────────────────── */
@@ -296,10 +300,10 @@ function App() {
   const [showAdd, setShowAdd] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [deleteItem, setDeleteItem] = useState(null);
-  const [filterYear, setFilterYear] = useState(2025);
+  const [filterYear, setFilterYear] = useState(new Date().getFullYear());
   const [filterMonth, setFilterMonth] = useState('');
   const [filterCat, setFilterCat] = useState('');
-  const [viewYear, setViewYear] = useState(2025);
+  const [viewYear, setViewYear] = useState(new Date().getFullYear());
   const [apiKey, setApiKey] = useState(() => localStorage.getItem(API_KEY_STORAGE) || '');
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [showApiInput, setShowApiInput] = useState(false);
@@ -322,10 +326,11 @@ function App() {
   const monthlyTotals = Array(12).fill(0);
   yearExpenses.forEach(e => { monthlyTotals[new Date(e.date).getMonth()] += e.amount; });
 
-  const addExpense = (data) => {
+  const addExpense = (data, fromUpload = false) => {
     const newList = [...expenses, { ...data, id: nextId.current++, receipt: null }];
     setExpenses(newList);
     setShowAdd(false);
+    if (fromUpload) setPage('expenses');
   };
   const updateExpense = (data) => {
     setExpenses(prev => prev.map(e => e.id === data.id ? { ...data } : e));
@@ -437,7 +442,7 @@ function App() {
             />
           )}
           {page === 'upload' && (
-            <UploadPage onAdd={addExpense} apiKey={apiKey} />
+            <UploadPage onAdd={(data) => addExpense(data, true)} apiKey={apiKey} />
           )}
         </div>
       </div>
@@ -802,7 +807,7 @@ Respond ONLY with a valid JSON object — no markdown, no extra text, no explana
   const handleSave = () => {
     if (!form.vendor || !form.amount || !form.date) return;
     onAdd({ date: form.date, vendor: form.vendor, amount: parseFloat(form.amount), category: form.category, description: form.description });
-    setStage('idle');
+    setStage('saved');
     setScanResult(null);
     setForm({ date: new Date().toISOString().slice(0,10), vendor: '', amount: '', category: 'Other', description: '' });
   };
@@ -924,6 +929,17 @@ Respond ONLY with a valid JSON object — no markdown, no extra text, no explana
           <div className="card-body">
             <div className="delete-confirm" style={{ marginBottom: 14 }}>{errorMsg}</div>
             <button className="btn btn-outline" onClick={() => setStage('idle')}>Go back</button>
+          </div>
+        </div>
+      )}
+
+      {stage === 'saved' && (
+        <div className="card">
+          <div className="card-body" style={{ textAlign: 'center', padding: '36px 20px' }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>✅</div>
+            <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 4 }}>Expense saved!</div>
+            <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20 }}>Redirecting you to All Expenses...</div>
+            <button className="btn btn-primary" onClick={() => setStage('idle')}>Scan another</button>
           </div>
         </div>
       )}
