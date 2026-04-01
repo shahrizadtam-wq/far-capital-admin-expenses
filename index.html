@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Far Capital — Expense Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.development.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --surface2: #f0eeea;
+    --border: rgba(0,0,0,0.09);
+    --text: #1a1a18;
+    --muted: #6b6b65;
+    --accent: #1a3a2a;
+    --accent-light: #e8f0eb;
+    --accent-mid: #2d6b47;
+    --danger: #c0392b;
+    --danger-light: #fdf0ee;
+    --amber: #b8750a;
+    --amber-light: #fef8ee;
+    --blue: #1a4b8c;
+    --blue-light: #eef3fb;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; min-height: 100vh; }
+  #root { min-height: 100vh; }
+
+  .app { display: flex; flex-direction: column; min-height: 100vh; }
+
+  .topbar {
+    background: var(--accent);
+    color: #fff;
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .topbar-brand { display: flex; align-items: center; gap: 10px; }
+  .topbar-logo {
+    width: 32px; height: 32px; border-radius: 6px;
+    background: rgba(255,255,255,0.15);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; color: #fff;
+  }
+  .topbar-name { font-size: 15px; font-weight: 500; letter-spacing: -0.2px; }
+  .topbar-sub { font-size: 12px; opacity: 0.6; margin-left: 6px; }
+  .topbar-actions { display: flex; gap: 8px; }
+
+  .btn {
+    border: none; cursor: pointer; border-radius: var(--radius-sm);
+    font-family: inherit; font-size: 13px; font-weight: 500;
+    padding: 7px 14px; display: inline-flex; align-items: center; gap: 6px;
+    transition: all 0.15s;
+  }
+  .btn-primary { background: var(--accent-mid); color: #fff; }
+  .btn-primary:hover { background: #245c3c; }
+  .btn-ghost { background: rgba(255,255,255,0.12); color: #fff; }
+  .btn-ghost:hover { background: rgba(255,255,255,0.2); }
+  .btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
+  .btn-outline:hover { background: var(--surface2); }
+  .btn-danger { background: var(--danger-light); color: var(--danger); border: 1px solid rgba(192,57,43,0.15); }
+  .btn-danger:hover { background: #f9d9d5; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .main { display: flex; flex: 1; }
+  .sidebar {
+    width: 200px; background: var(--surface); border-right: 1px solid var(--border);
+    padding: 16px 12px; display: flex; flex-direction: column; gap: 2px;
+    position: sticky; top: 56px; height: calc(100vh - 56px); overflow-y: auto;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+    border-radius: var(--radius-sm); cursor: pointer; transition: all 0.12s;
+    font-size: 13px; color: var(--muted); font-weight: 400;
+    border: none; background: none; width: 100%; text-align: left;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+  .nav-icon { font-size: 15px; }
+
+  .content { flex: 1; padding: 24px; overflow-y: auto; }
+
+  .page-header { margin-bottom: 20px; }
+  .page-title { font-size: 20px; font-weight: 600; letter-spacing: -0.3px; }
+  .page-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px;
+  }
+  .stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); font-weight: 500; margin-bottom: 6px; }
+  .stat-value { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; font-family: 'DM Mono', monospace; }
+  .stat-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .stat-green .stat-value { color: var(--accent-mid); }
+  .stat-amber .stat-value { color: var(--amber); }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .card-header {
+    padding: 14px 16px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-title { font-size: 13px; font-weight: 500; }
+  .card-body { padding: 16px; }
+
+  .charts-row { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; margin-bottom: 20px; }
+
+  table { width: 100%; border-collapse: collapse; }
+  th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); font-weight: 500; padding: 10px 14px; text-align: left; background: var(--surface2); }
+  td { padding: 11px 14px; border-top: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+  tr:hover td { background: var(--surface2); }
+
+  .badge {
+    display: inline-flex; align-items: center; padding: 2px 8px;
+    border-radius: 20px; font-size: 11px; font-weight: 500;
+  }
+  .badge-travel { background: var(--blue-light); color: var(--blue); }
+  .badge-meals { background: #fef6ee; color: #a05c10; }
+  .badge-office { background: var(--accent-light); color: var(--accent); }
+  .badge-software { background: #f3eeff; color: #5b2d9e; }
+  .badge-marketing { background: #feeef5; color: #9e1a5e; }
+  .badge-utilities { background: #eef7f7; color: #0f6e6e; }
+  .badge-professional { background: #eef3fb; color: var(--blue); }
+  .badge-other { background: var(--surface2); color: var(--muted); }
+
+  .filter-bar { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
+  select, input[type=text], input[type=number], input[type=date], textarea {
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 7px 10px; font-family: inherit; font-size: 13px;
+    background: var(--surface); color: var(--text); outline: none;
+  }
+  select:focus, input:focus, textarea:focus { border-color: var(--accent-mid); box-shadow: 0 0 0 3px rgba(45,107,71,0.12); }
+
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 200; padding: 20px;
+  }
+  .modal {
+    background: var(--surface); border-radius: 12px;
+    width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  }
+  .modal-header { padding: 18px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .modal-title { font-size: 15px; font-weight: 600; }
+  .modal-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .modal-footer { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-label { font-size: 12px; font-weight: 500; color: var(--muted); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .upload-zone {
+    border: 2px dashed var(--border); border-radius: var(--radius);
+    padding: 36px; text-align: center; cursor: pointer;
+    transition: all 0.15s; background: var(--surface2);
+  }
+  .upload-zone:hover, .upload-zone.dragging { border-color: var(--accent-mid); background: var(--accent-light); }
+  .upload-icon { font-size: 32px; margin-bottom: 10px; }
+  .upload-text { font-size: 13px; color: var(--muted); }
+  .upload-text strong { color: var(--accent-mid); }
+
+  .scanning-state { text-align: center; padding: 32px; }
+  .scan-spinner {
+    width: 36px; height: 36px; border: 3px solid var(--accent-light);
+    border-top-color: var(--accent-mid); border-radius: 50%;
+    animation: spin 0.8s linear infinite; margin: 0 auto 14px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty-state { text-align: center; padding: 48px 20px; color: var(--muted); }
+  .empty-icon { font-size: 36px; margin-bottom: 12px; opacity: 0.4; }
+
+  .amount { font-family: 'DM Mono', monospace; }
+
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; background: var(--surface2); border-radius: var(--radius-sm); padding: 3px; width: fit-content; }
+  .tab { padding: 6px 14px; border-radius: 4px; font-size: 13px; cursor: pointer; border: none; background: none; font-family: inherit; color: var(--muted); transition: all 0.12s; }
+  .tab.active { background: var(--surface); color: var(--text); font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+  .scan-result-preview {
+    background: var(--accent-light); border: 1px solid rgba(45,107,71,0.2);
+    border-radius: var(--radius-sm); padding: 12px; font-size: 12px; color: var(--accent);
+  }
+  .scan-badge { display: inline-flex; align-items: center; gap: 4px; background: var(--accent-mid); color: #fff; border-radius: 20px; padding: 2px 8px; font-size: 11px; margin-bottom: 8px; }
+
+  .delete-confirm { background: var(--danger-light); border: 1px solid rgba(192,57,43,0.15); border-radius: var(--radius-sm); padding: 12px; font-size: 13px; color: var(--danger); }
+
+  .year-selector { display: flex; align-items: center; gap: 8px; }
+
+  .progress-bar { background: var(--surface2); border-radius: 4px; height: 6px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 4px; background: var(--accent-mid); transition: width 0.5s ease; }
+
+  /* ── API Key Banner ── */
+  .api-banner {
+    background: var(--amber-light); border-bottom: 1px solid rgba(184,117,10,0.2);
+    padding: 10px 24px; font-size: 12px; color: var(--amber);
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  .api-banner input { font-size: 12px; padding: 4px 8px; width: 280px; font-family: 'DM Mono', monospace; }
+  .api-banner .btn { font-size: 11px; padding: 4px 10px; }
+
+  @media (max-width: 900px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .charts-row { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px) {
+    .sidebar { display: none; }
+    .topbar-sub { display: none; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+/* ─────────────────────────── CONSTANTS ─────────────────────────── */
+const CATEGORIES = [
+  'Travel',
+  'Meals & Entertainment',
+  'Office Supplies',
+  'Software & Subscriptions',
+  'Marketing',
+  'Utilities',
+  'Professional Services',
+  'Other',
+];
+
+const CAT_BADGE = {
+  'Travel': 'badge-travel',
+  'Meals & Entertainment': 'badge-meals',
+  'Office Supplies': 'badge-office',
+  'Software & Subscriptions': 'badge-software',
+  'Marketing': 'badge-marketing',
+  'Utilities': 'badge-utilities',
+  'Professional Services': 'badge-professional',
+  'Other': 'badge-other',
+};
+
+const CHART_COLORS = [
+  '#2d6b47','#1a4b8c','#b8750a','#9e1a5e',
+  '#0f6e6e','#5b2d9e','#a05c10','#5f5e5a',
+];
+
+const SAMPLE_DATA = [
+  { id: 1,  date: '2025-01-08', vendor: 'MAS Wings',          amount: 1250.00, category: 'Travel',                    description: 'Flight KL to Sabah, client visit' },
+  { id: 2,  date: '2025-01-15', vendor: "Nando's KLCC",       amount: 186.50,  category: 'Meals & Entertainment',     description: 'Team lunch, 6 pax' },
+  { id: 3,  date: '2025-02-03', vendor: 'Microsoft 365',      amount: 299.00,  category: 'Software & Subscriptions',  description: 'Annual subscription' },
+  { id: 4,  date: '2025-02-20', vendor: 'Waze Ads',           amount: 800.00,  category: 'Marketing',                 description: 'Feb digital campaign' },
+  { id: 5,  date: '2025-03-05', vendor: 'Pos Malaysia',       amount: 45.00,   category: 'Office Supplies',           description: 'Courier & postage' },
+  { id: 6,  date: '2025-03-18', vendor: 'Telekom Malaysia',   amount: 199.00,  category: 'Utilities',                 description: 'Fibre broadband Mar' },
+  { id: 7,  date: '2025-04-10', vendor: 'Grab for Business',  amount: 620.00,  category: 'Travel',                    description: 'Staff transport Apr' },
+  { id: 8,  date: '2025-04-22', vendor: 'Deloitte',           amount: 3500.00, category: 'Professional Services',     description: 'Tax advisory Q1' },
+  { id: 9,  date: '2025-05-07', vendor: 'MPH Books',          amount: 310.00,  category: 'Office Supplies',           description: 'Reference books & stationery' },
+  { id: 10, date: '2025-05-14', vendor: 'Sheraton PJ',        amount: 880.00,  category: 'Meals & Entertainment',     description: 'Client dinner, board meeting' },
+  { id: 11, date: '2025-06-01', vendor: 'Google Workspace',   amount: 156.00,  category: 'Software & Subscriptions',  description: 'Monthly workspace plan' },
+  { id: 12, date: '2025-06-25', vendor: 'AirAsia Business',   amount: 2100.00, category: 'Travel',                    description: 'Team trip Singapore, 3 pax' },
+];
+
+/* ─────────────────────────── HELPERS ─────────────────────────── */
+const fmt = (n) =>
+  'RM ' + Number(n).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+const STORAGE_KEY = 'farcapital_expenses';
+const API_KEY_STORAGE = 'farcapital_apikey';
+
+function loadExpenses() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : SAMPLE_DATA;
+  } catch { return SAMPLE_DATA; }
+}
+
+function saveExpenses(list) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); } catch {}
+}
+
+/* ═══════════════════════════ APP ROOT ═══════════════════════════ */
+function App() {
+  const [page, setPage] = useState('dashboard');
+  const [expenses, setExpenses] = useState(loadExpenses);
+  const [showAdd, setShowAdd] = useState(false);
+  const [editItem, setEditItem] = useState(null);
+  const [deleteItem, setDeleteItem] = useState(null);
+  const [filterYear, setFilterYear] = useState(2025);
+  const [filterMonth, setFilterMonth] = useState('');
+  const [filterCat, setFilterCat] = useState('');
+  const [viewYear, setViewYear] = useState(2025);
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem(API_KEY_STORAGE) || '');
+  const [apiKeyInput, setApiKeyInput] = useState('');
+  const [showApiInput, setShowApiInput] = useState(false);
+  const nextId = useRef(Date.now());
+
+  useEffect(() => { saveExpenses(expenses); }, [expenses]);
+
+  const allYears = [...new Set([...expenses.map(e => new Date(e.date).getFullYear()), new Date().getFullYear()])].sort((a,b) => b-a);
+  const yearExpenses = expenses.filter(e => new Date(e.date).getFullYear() === viewYear);
+  const total = yearExpenses.reduce((s, e) => s + e.amount, 0);
+  const now = new Date();
+  const monthExpenses = expenses.filter(e => {
+    const d = new Date(e.date);
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  });
+  const monthTotal = monthExpenses.reduce((s, e) => s + e.amount, 0);
+  const catTotals = {};
+  yearExpenses.forEach(e => { catTotals[e.category] = (catTotals[e.category] || 0) + e.amount; });
+  const topCat = Object.entries(catTotals).sort((a,b) => b[1]-a[1])[0];
+  const monthlyTotals = Array(12).fill(0);
+  yearExpenses.forEach(e => { monthlyTotals[new Date(e.date).getMonth()] += e.amount; });
+
+  const addExpense = (data) => {
+    const newList = [...expenses, { ...data, id: nextId.current++, receipt: null }];
+    setExpenses(newList);
+    setShowAdd(false);
+  };
+  const updateExpense = (data) => {
+    setExpenses(prev => prev.map(e => e.id === data.id ? { ...data } : e));
+    setEditItem(null);
+  };
+  const deleteExpense = (id) => {
+    setExpenses(prev => prev.filter(e => e.id !== id));
+    setDeleteItem(null);
+  };
+  const saveApiKey = () => {
+    const trimmed = apiKeyInput.trim();
+    setApiKey(trimmed);
+    localStorage.setItem(API_KEY_STORAGE, trimmed);
+    setShowApiInput(false);
+    setApiKeyInput('');
+  };
+
+  const filteredExpenses = expenses.filter(e => {
+    const d = new Date(e.date);
+    if (filterYear && d.getFullYear() !== Number(filterYear)) return false;
+    if (filterMonth && (d.getMonth() + 1) !== Number(filterMonth)) return false;
+    if (filterCat && e.category !== filterCat) return false;
+    return true;
+  });
+
+  const navItems = [
+    { id: 'dashboard', icon: '▦', label: 'Dashboard' },
+    { id: 'expenses',  icon: '≡', label: 'All Expenses' },
+    { id: 'upload',    icon: '⬆', label: 'Scan Receipt' },
+  ];
+
+  return (
+    <div className="app">
+      {/* ── Top bar ── */}
+      <div className="topbar">
+        <div className="topbar-brand">
+          <div className="topbar-logo">FC</div>
+          <span className="topbar-name">Far Capital</span>
+          <span className="topbar-sub">Expense Manager</span>
+        </div>
+        <div className="topbar-actions">
+          <button className="btn btn-ghost btn-sm" onClick={() => { setShowApiInput(v => !v); setApiKeyInput(''); }}>
+            {apiKey ? '🔑 API Key ✓' : '🔑 Set API Key'}
+          </button>
+          <button className="btn btn-ghost btn-sm" onClick={() => setPage('upload')}>⬆ Scan Receipt</button>
+          <button className="btn btn-primary btn-sm" onClick={() => setShowAdd(true)}>+ Add Expense</button>
+        </div>
+      </div>
+
+      {/* ── API Key banner ── */}
+      {showApiInput && (
+        <div className="api-banner">
+          <span>Enter your Anthropic API key to enable AI receipt scanning:</span>
+          <input
+            type="password"
+            placeholder="sk-ant-..."
+            value={apiKeyInput}
+            onChange={e => setApiKeyInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && saveApiKey()}
+          />
+          <button className="btn btn-outline btn-sm" onClick={saveApiKey}>Save</button>
+          <button className="btn btn-outline btn-sm" onClick={() => setShowApiInput(false)}>Cancel</button>
+          <span style={{ opacity: 0.7 }}>Key is stored in your browser only.</span>
+        </div>
+      )}
+
+      <div className="main">
+        {/* ── Sidebar ── */}
+        <nav className="sidebar">
+          {navItems.map(n => (
+            <button
+              key={n.id}
+              className={`nav-item ${page === n.id ? 'active' : ''}`}
+              onClick={() => setPage(n.id)}
+            >
+              <span className="nav-icon">{n.icon}</span>{n.label}
+            </button>
+          ))}
+        </nav>
+
+        {/* ── Main content ── */}
+        <div className="content">
+          {page === 'dashboard' && (
+            <Dashboard
+              yearExpenses={yearExpenses}
+              total={total}
+              monthTotal={monthTotal}
+              monthExpenses={monthExpenses}
+              topCat={topCat}
+              catTotals={catTotals}
+              monthlyTotals={monthlyTotals}
+              viewYear={viewYear}
+              setViewYear={setViewYear}
+              allYears={allYears}
+            />
+          )}
+          {page === 'expenses' && (
+            <ExpensesPage
+              expenses={filteredExpenses}
+              allExpenses={expenses}
+              filterYear={filterYear}
+              setFilterYear={setFilterYear}
+              filterMonth={filterMonth}
+              setFilterMonth={setFilterMonth}
+              filterCat={filterCat}
+              setFilterCat={setFilterCat}
+              onEdit={setEditItem}
+              onDelete={setDeleteItem}
+            />
+          )}
+          {page === 'upload' && (
+            <UploadPage onAdd={addExpense} apiKey={apiKey} />
+          )}
+        </div>
+      </div>
+
+      {/* ── Modals ── */}
+      {showAdd   && <ExpenseModal title="Add Expense"  onSave={addExpense}    onClose={() => setShowAdd(false)} />}
+      {editItem  && <ExpenseModal title="Edit Expense" item={editItem} onSave={updateExpense} onClose={() => setEditItem(null)} />}
+      {deleteItem && <DeleteModal item={deleteItem} onConfirm={() => deleteExpense(deleteItem.id)} onClose={() => setDeleteItem(null)} />}
+    </div>
+  );
+}
+
+/* ═══════════════════════════ DASHBOARD ═══════════════════════════ */
+function Dashboard({ yearExpenses, total, monthTotal, monthExpenses, topCat, catTotals, monthlyTotals, viewYear, setViewYear, allYears }) {
+  const barRef   = useRef(null);
+  const donutRef = useRef(null);
+  const barChart   = useRef(null);
+  const donutChart = useRef(null);
+
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  useEffect(() => {
+    if (!barRef.current) return;
+    if (barChart.current) barChart.current.destroy();
+    barChart.current = new Chart(barRef.current, {
+      type: 'bar',
+      data: {
+        labels: MONTHS,
+        datasets: [{
+          label: 'Expenses (RM)',
+          data: monthlyTotals,
+          backgroundColor: '#2d6b47',
+          borderRadius: 4,
+          borderSkipped: false,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#6b6b65' } },
+          y: {
+            grid: { color: 'rgba(0,0,0,0.05)' },
+            ticks: {
+              font: { size: 11 }, color: '#6b6b65',
+              callback: v => v >= 1000 ? 'RM ' + (v/1000).toFixed(0) + 'k' : 'RM ' + v,
+            },
+          },
+        },
+      },
+    });
+    return () => { if (barChart.current) barChart.current.destroy(); };
+  }, [monthlyTotals]);
+
+  useEffect(() => {
+    if (!donutRef.current) return;
+    if (donutChart.current) donutChart.current.destroy();
+    const cats = Object.keys(catTotals);
+    if (!cats.length) return;
+    donutChart.current = new Chart(donutRef.current, {
+      type: 'doughnut',
+      data: {
+        labels: cats,
+        datasets: [{
+          data: cats.map(c => catTotals[c]),
+          backgroundColor: CHART_COLORS.slice(0, cats.length),
+          borderWidth: 0,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '68%',
+        plugins: { legend: { display: false } },
+      },
+    });
+    return () => { if (donutChart.current) donutChart.current.destroy(); };
+  }, [catTotals]);
+
+  const sortedCats = Object.entries(catTotals).sort((a,b) => b[1]-a[1]);
+  const maxCat = sortedCats[0]?.[1] || 1;
+
+  return (
+    <div>
+      <div className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <div className="page-title">Overview</div>
+          <div className="page-sub">Financial snapshot for Far Capital</div>
+        </div>
+        <div className="year-selector">
+          <span style={{ fontSize: 12, color: 'var(--muted)' }}>Viewing</span>
+          <select value={viewYear} onChange={e => setViewYear(Number(e.target.value))}>
+            {allYears.map(y => <option key={y} value={y}>{y}</option>)}
+          </select>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-label">Annual Total ({viewYear})</div>
+          <div className="stat-value">{fmt(total)}</div>
+          <div className="stat-sub">{yearExpenses.length} transactions</div>
+        </div>
+        <div className="stat-card stat-amber">
+          <div className="stat-label">This Month</div>
+          <div className="stat-value">{fmt(monthTotal)}</div>
+          <div className="stat-sub">{monthExpenses.length} transactions</div>
+        </div>
+        <div className="stat-card stat-green">
+          <div className="stat-label">Monthly Average</div>
+          <div className="stat-value">{fmt(total / 12)}</div>
+          <div className="stat-sub">Based on full year</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Top Category</div>
+          <div className="stat-value" style={{ fontSize: 15, marginTop: 4 }}>{topCat ? topCat[0] : '—'}</div>
+          <div className="stat-sub">{topCat ? fmt(topCat[1]) : '—'}</div>
+        </div>
+      </div>
+
+      {/* Charts */}
+      <div className="charts-row">
+        <div className="card">
+          <div className="card-header">
+            <span className="card-title">Monthly spend — {viewYear}</span>
+          </div>
+          <div className="card-body">
+            <div style={{ position: 'relative', height: 210 }}>
+              <canvas ref={barRef}></canvas>
+            </div>
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-header"><span className="card-title">By category</span></div>
+          <div className="card-body">
+            <div style={{ position: 'relative', height: 140, marginBottom: 16 }}>
+              <canvas ref={donutRef}></canvas>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+              {sortedCats.slice(0,5).map(([cat, amt]) => (
+                <div key={cat}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 3 }}>
+                    <span style={{ color: 'var(--muted)' }}>{cat}</span>
+                    <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11 }}>{fmt(amt)}</span>
+                  </div>
+                  <div className="progress-bar">
+                    <div className="progress-fill" style={{ width: (amt / maxCat * 100) + '%' }}></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Recent table */}
+      <div className="card">
+        <div className="card-header"><span className="card-title">Recent transactions</span></div>
+        <table>
+          <thead>
+            <tr><th>Date</th><th>Vendor</th><th>Category</th><th>Description</th><th style={{ textAlign: 'right' }}>Amount</th></tr>
+          </thead>
+          <tbody>
+            {yearExpenses.slice(-8).reverse().map(e => (
+              <tr key={e.id}>
+                <td style={{ color: 'var(--muted)', fontSize: 12, whiteSpace: 'nowrap' }}>
+                  {new Date(e.date).toLocaleDateString('en-MY', { day: '2-digit', month: 'short' })}
+                </td>
+                <td style={{ fontWeight: 500 }}>{e.vendor}</td>
+                <td><span className={`badge ${CAT_BADGE[e.category] || 'badge-other'}`}>{e.category}</span></td>
+                <td style={{ color: 'var(--muted)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.description}</td>
+                <td style={{ textAlign: 'right' }} className="amount">{fmt(e.amount)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════ EXPENSES PAGE ═══════════════════════════ */
+function ExpensesPage({ expenses, allExpenses, filterYear, setFilterYear, filterMonth, setFilterMonth, filterCat, setFilterCat, onEdit, onDelete }) {
+  const years = [...new Set(allExpenses.map(e => new Date(e.date).getFullYear()))].sort((a,b) => b-a);
+  const total = expenses.reduce((s,e) => s + e.amount, 0);
+  const sorted = [...expenses].sort((a,b) => new Date(b.date) - new Date(a.date));
+
+  return (
+    <div>
+      <div className="page-header">
+        <div className="page-title">All Expenses</div>
+        <div className="page-sub">{expenses.length} records · Total {fmt(total)}</div>
+      </div>
+
+      <div className="filter-bar">
+        <select value={filterYear} onChange={e => setFilterYear(e.target.value)}>
+          <option value="">All years</option>
+          {years.map(y => <option key={y} value={y}>{y}</option>)}
+        </select>
+        <select value={filterMonth} onChange={e => setFilterMonth(e.target.value)}>
+          <option value="">All months</option>
+          {['January','February','March','April','May','June','July','August','September','October','November','December']
+            .map((m,i) => <option key={i} value={i+1}>{m}</option>)}
+        </select>
+        <select value={filterCat} onChange={e => setFilterCat(e.target.value)}>
+          <option value="">All categories</option>
+          {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+        {(filterYear || filterMonth || filterCat) && (
+          <button className="btn btn-outline btn-sm" onClick={() => { setFilterYear(''); setFilterMonth(''); setFilterCat(''); }}>
+            Clear filters
+          </button>
+        )}
+      </div>
+
+      <div className="card">
+        {sorted.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-icon">📋</div>
+            <div>No expenses found</div>
+            <div style={{ fontSize: 12, marginTop: 4 }}>Try adjusting your filters</div>
+          </div>
+        ) : (
+          <table>
+            <thead>
+              <tr><th>Date</th><th>Vendor</th><th>Category</th><th>Description</th><th style={{ textAlign: 'right' }}>Amount</th><th></th></tr>
+            </thead>
+            <tbody>
+              {sorted.map(e => (
+                <tr key={e.id}>
+                  <td style={{ color: 'var(--muted)', fontSize: 12, whiteSpace: 'nowrap' }}>
+                    {new Date(e.date).toLocaleDateString('en-MY', { day: '2-digit', month: 'short', year: '2-digit' })}
+                  </td>
+                  <td style={{ fontWeight: 500 }}>{e.vendor}</td>
+                  <td><span className={`badge ${CAT_BADGE[e.category] || 'badge-other'}`}>{e.category}</span></td>
+                  <td style={{ color: 'var(--muted)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.description}</td>
+                  <td style={{ textAlign: 'right' }} className="amount">{fmt(e.amount)}</td>
+                  <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                    <button className="btn btn-outline btn-sm" style={{ marginRight: 4 }} onClick={() => onEdit(e)}>Edit</button>
+                    <button className="btn btn-danger btn-sm" onClick={() => onDelete(e)}>Delete</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════ UPLOAD PAGE ═══════════════════════════ */
+function UploadPage({ onAdd, apiKey }) {
+  const [stage, setStage] = useState('idle'); // idle | scanning | result | manual | error
+  const [scanResult, setScanResult] = useState(null);
+  const [dragging, setDragging] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [form, setForm] = useState({
+    date: new Date().toISOString().slice(0,10),
+    vendor: '', amount: '', category: 'Other', description: '',
+  });
+  const fileRef = useRef();
+
+  const processFile = async (file) => {
+    if (!file) return;
+    if (!apiKey) {
+      setErrorMsg('Please set your Anthropic API key first (click "🔑 Set API Key" in the top bar).');
+      setStage('error');
+      return;
+    }
+    setStage('scanning');
+    setErrorMsg('');
+    try {
+      const base64 = await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(r.result.split(',')[1]);
+        r.onerror = rej;
+        r.readAsDataURL(file);
+      });
+      const isImage = file.type.startsWith('image/');
+      const promptText = `You are an expense extraction assistant. Extract from this receipt or invoice: vendor name, date, total amount in Malaysian Ringgit (RM/MYR), and expense category.\n\nRespond ONLY with a valid JSON object — no markdown, no extra text:\n{"vendor":"...","date":"YYYY-MM-DD","amount":0.00,"category":"Travel|Meals & Entertainment|Office Supplies|Software & Subscriptions|Marketing|Utilities|Professional Services|Other","description":"one-line description"}`;
+
+      const userContent = isImage
+        ? [
+            { type: 'image', source: { type: 'base64', media_type: file.type, data: base64 } },
+            { type: 'text', text: promptText },
+          ]
+        : [{ type: 'text', text: promptText + '\n\nNote: No image was provided; generate plausible placeholder data.' }];
+
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 500,
+          messages: [{ role: 'user', content: userContent }],
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error?.message || `API error ${res.status}`);
+      }
+
+      const data = await res.json();
+      const text = data.content?.find(b => b.type === 'text')?.text || '';
+      const clean = text.replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(clean);
+
+      setScanResult(parsed);
+      setForm({
+        date: parsed.date || new Date().toISOString().slice(0,10),
+        vendor: parsed.vendor || '',
+        amount: parsed.amount?.toString() || '',
+        category: CATEGORIES.includes(parsed.category) ? parsed.category : 'Other',
+        description: parsed.description || '',
+      });
+      setStage('result');
+    } catch (err) {
+      setErrorMsg('Could not extract data: ' + err.message + '. Please fill in manually.');
+      setStage('manual');
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) processFile(file);
+  };
+
+  const handleSave = () => {
+    if (!form.vendor || !form.amount || !form.date) return;
+    onAdd({ date: form.date, vendor: form.vendor, amount: parseFloat(form.amount), category: form.category, description: form.description });
+    setStage('idle');
+    setScanResult(null);
+    setForm({ date: new Date().toISOString().slice(0,10), vendor: '', amount: '', category: 'Other', description: '' });
+  };
+
+  const setF = (key, val) => setForm(f => ({ ...f, [key]: val }));
+
+  return (
+    <div style={{ maxWidth: 560 }}>
+      <div className="page-header">
+        <div className="page-title">Scan Receipt / Invoice</div>
+        <div className="page-sub">Upload a photo or PDF — AI will extract and categorize the expense automatically</div>
+      </div>
+
+      {!apiKey && (
+        <div style={{ background: 'var(--amber-light)', border: '1px solid rgba(184,117,10,0.25)', borderRadius: 'var(--radius)', padding: '12px 16px', marginBottom: 16, fontSize: 13, color: 'var(--amber)' }}>
+          ⚠ Set your Anthropic API key (top bar → 🔑 Set API Key) to enable AI scanning. You can still add expenses manually.
+        </div>
+      )}
+
+      {/* Idle — upload zone */}
+      {stage === 'idle' && (
+        <div className="card">
+          <div className="card-body">
+            <div
+              className={`upload-zone ${dragging ? 'dragging' : ''}`}
+              onClick={() => fileRef.current.click()}
+              onDragOver={e => { e.preventDefault(); setDragging(true); }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={handleDrop}
+            >
+              <div className="upload-icon">📄</div>
+              <div className="upload-text"><strong>Click to upload</strong> or drag & drop</div>
+              <div className="upload-text" style={{ fontSize: 12, marginTop: 4 }}>JPG, PNG, PDF supported</div>
+            </div>
+            <input ref={fileRef} type="file" accept="image/*,.pdf" style={{ display: 'none' }} onChange={e => processFile(e.target.files[0])} />
+            <div style={{ textAlign: 'center', margin: '14px 0', color: 'var(--muted)', fontSize: 12 }}>— or —</div>
+            <button className="btn btn-outline" style={{ width: '100%' }} onClick={() => setStage('manual')}>
+              Enter manually
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Scanning */}
+      {stage === 'scanning' && (
+        <div className="card">
+          <div className="card-body scanning-state">
+            <div className="scan-spinner"></div>
+            <div style={{ fontWeight: 500, marginBottom: 4 }}>Scanning document...</div>
+            <div style={{ fontSize: 12, color: 'var(--muted)' }}>AI is reading vendor, amount and category</div>
+          </div>
+        </div>
+      )}
+
+      {/* Result or Manual */}
+      {(stage === 'result' || stage === 'manual') && (
+        <div className="card">
+          <div className="card-header">
+            <div>
+              {stage === 'result' && <div className="scan-badge">✓ AI extracted</div>}
+              <span className="card-title">{stage === 'result' ? 'Review & confirm details' : 'Enter expense details'}</span>
+            </div>
+            <button className="btn btn-outline btn-sm" onClick={() => { setStage('idle'); setScanResult(null); }}>Cancel</button>
+          </div>
+          <div className="card-body">
+            {stage === 'result' && scanResult && (
+              <div className="scan-result-preview" style={{ marginBottom: 14 }}>
+                Identified: <strong>{scanResult.vendor}</strong> · <strong>{fmt(scanResult.amount)}</strong> · <strong>{scanResult.category}</strong>
+              </div>
+            )}
+            {errorMsg && (
+              <div style={{ background: 'var(--danger-light)', border: '1px solid rgba(192,57,43,0.15)', borderRadius: 'var(--radius-sm)', padding: '10px 12px', fontSize: 12, color: 'var(--danger)', marginBottom: 14 }}>
+                {errorMsg}
+              </div>
+            )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">Date *</label>
+                  <input type="date" value={form.date} onChange={e => setF('date', e.target.value)} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Amount (RM) *</label>
+                  <input type="number" placeholder="0.00" step="0.01" min="0" value={form.amount} onChange={e => setF('amount', e.target.value)} />
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Vendor / Merchant *</label>
+                <input type="text" placeholder="e.g. Grab, Petronas, Microsoft" value={form.vendor} onChange={e => setF('vendor', e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Category</label>
+                <select value={form.category} onChange={e => setF('category', e.target.value)}>
+                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Description</label>
+                <input type="text" placeholder="Brief note about this expense" value={form.description} onChange={e => setF('description', e.target.value)} />
+              </div>
+            </div>
+          </div>
+          <div style={{ padding: '14px 16px', borderTop: '1px solid var(--border)', display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button className="btn btn-outline" onClick={() => setStage('idle')}>Back</button>
+            <button
+              className="btn btn-primary"
+              onClick={handleSave}
+              disabled={!form.vendor || !form.amount || !form.date}
+            >
+              Save Expense
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Error */}
+      {stage === 'error' && (
+        <div className="card">
+          <div className="card-body">
+            <div className="delete-confirm" style={{ marginBottom: 14 }}>{errorMsg}</div>
+            <button className="btn btn-outline" onClick={() => setStage('idle')}>Go back</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════ MODALS ═══════════════════════════ */
+function ExpenseModal({ title, item, onSave, onClose }) {
+  const [form, setForm] = useState(
+    item
+      ? { ...item, amount: item.amount.toString() }
+      : { date: new Date().toISOString().slice(0,10), vendor: '', amount: '', category: 'Other', description: '' }
+  );
+  const setF = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const valid = form.vendor.trim() && form.amount && form.date;
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal">
+        <div className="modal-header">
+          <span className="modal-title">{title}</span>
+          <button className="btn btn-outline btn-sm" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body">
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Date *</label>
+              <input type="date" value={form.date} onChange={e => setF('date', e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Amount (RM) *</label>
+              <input type="number" placeholder="0.00" step="0.01" min="0" value={form.amount} onChange={e => setF('amount', e.target.value)} />
+            </div>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Vendor / Merchant *</label>
+            <input type="text" placeholder="e.g. Grab, Petronas" value={form.vendor} onChange={e => setF('vendor', e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Category</label>
+            <select value={form.category} onChange={e => setF('category', e.target.value)}>
+              {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Description</label>
+            <input type="text" placeholder="Brief note" value={form.description} onChange={e => setF('description', e.target.value)} />
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button className="btn btn-outline" onClick={onClose}>Cancel</button>
+          <button
+            className="btn btn-primary"
+            disabled={!valid}
+            onClick={() => onSave({ ...form, amount: parseFloat(form.amount) })}
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DeleteModal({ item, onConfirm, onClose }) {
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal" style={{ maxWidth: 400 }}>
+        <div className="modal-header">
+          <span className="modal-title">Delete expense</span>
+          <button className="btn btn-outline btn-sm" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body">
+          <div className="delete-confirm">
+            You are about to permanently delete <strong>{item.vendor}</strong> ({fmt(item.amount)}) dated{' '}
+            {new Date(item.date).toLocaleDateString('en-MY', { day: '2-digit', month: 'short', year: 'numeric' })}.
+            This cannot be undone.
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button className="btn btn-outline" onClick={onClose}>Cancel</button>
+          <button className="btn btn-danger" onClick={onConfirm}>Delete</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════ MOUNT ═══════════════════════════ */
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
