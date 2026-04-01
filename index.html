@@ -720,14 +720,37 @@ function UploadPage({ onAdd, apiKey }) {
         r.readAsDataURL(file);
       });
       const isImage = file.type.startsWith('image/');
-      const promptText = `You are an expense extraction assistant. Extract from this receipt or invoice: vendor name, date, total amount in Malaysian Ringgit (RM/MYR), and expense category.\n\nRespond ONLY with a valid JSON object — no markdown, no extra text:\n{"vendor":"...","date":"YYYY-MM-DD","amount":0.00,"category":"Travel|Meals & Entertainment|Office Supplies|Software & Subscriptions|Marketing|Utilities|Professional Services|Other","description":"one-line description"}`;
+      const isPDF = file.type === 'application/pdf';
 
-      const userContent = isImage
-        ? [
-            { type: 'image', source: { type: 'base64', media_type: file.type, data: base64 } },
-            { type: 'text', text: promptText },
-          ]
-        : [{ type: 'text', text: promptText + '\n\nNote: No image was provided; generate plausible placeholder data.' }];
+      const promptText = `You are an expense extraction assistant for a Malaysian company. Carefully read this receipt or invoice and extract the following fields.
+
+Rules:
+- vendor: the supplier/merchant name (who issued the invoice or receipt), NOT the company being billed
+- date: the invoice or receipt date in YYYY-MM-DD format
+- amount: the final total payable amount in RM (look for "Total Payable", "Total Amount Due", "Grand Total", or the largest total figure)
+- category: pick the most fitting from exactly these options: Travel | Meals & Entertainment | Office Supplies | Software & Subscriptions | Marketing | Utilities | Professional Services | Other
+- description: a concise one-line summary of what was purchased/serviced
+
+For invoices: the vendor is the company name at the TOP of the invoice (the issuer), not the "TO:" recipient.
+For receipts: the vendor is the shop/restaurant name printed on the receipt.
+
+Respond ONLY with a valid JSON object — no markdown, no extra text, no explanation:
+{"vendor":"...","date":"YYYY-MM-DD","amount":0.00,"category":"...","description":"..."}`;
+
+      let userContent;
+      if (isImage) {
+        userContent = [
+          { type: 'image', source: { type: 'base64', media_type: file.type, data: base64 } },
+          { type: 'text', text: promptText },
+        ];
+      } else if (isPDF) {
+        userContent = [
+          { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } },
+          { type: 'text', text: promptText },
+        ];
+      } else {
+        userContent = [{ type: 'text', text: promptText + '\n\nNote: No file was provided.' }];
+      }
 
       const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
