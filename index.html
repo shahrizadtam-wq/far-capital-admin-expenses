@@ -262,7 +262,7 @@ function App(){
       {editItem   &&<ExpenseModal title="Edit Expense" catNames={catNames} item={editItem} onSave={updExpense} onClose={()=>setEditItem(null)}/>}
       {deleteItem &&<DeleteModal  item={deleteItem} onConfirm={()=>delExpense(deleteItem.id)} onClose={()=>setDeleteItem(null)}/>}
       {detailItem &&<DetailModal  item={detailItem} categories={categories} onEdit={()=>{setEditItem(detailItem);setDetailItem(null);}} onDelete={()=>{setDeleteItem(detailItem);setDetailItem(null);}} onClose={()=>setDetailItem(null)}/>}
-      {showCatMgr &&<CategoryManager categories={categories} setCategories={setCategories} onClose={()=>setShowCatMgr(false)}/>}
+      {showCatMgr &&<CategoryManager categories={categories} setCategories={setCategories} expenses={expenses} setExpenses={setExpenses} onClose={()=>setShowCatMgr(false)}/>}
     </div>
   );
 }
@@ -660,7 +660,7 @@ function DeleteModal({item,onConfirm,onClose}){
 }
 
 /* ════════════════════ CATEGORY MANAGER ════════════════════ */
-function CategoryManager({categories,setCategories,onClose}){
+function CategoryManager({categories,setCategories,expenses,setExpenses,onClose}){
   const [local,  setLocal]  = useState(categories.map(c=>({...c})));
   const [newName,setNewName]= useState('');
   const [editing,setEditing]= useState(null);
@@ -678,12 +678,31 @@ function CategoryManager({categories,setCategories,onClose}){
     setEditing(null);
   };
 
+  const handleSave=()=>{
+    // Build a map of old name -> new name for any renamed categories
+    const renameMap={};
+    categories.forEach(orig=>{
+      const updated=local.find(l=>l.id===orig.id);
+      if(updated && updated.name!==orig.name){
+        renameMap[orig.name]=updated.name;
+      }
+    });
+    // Update all existing expenses that used a renamed category
+    if(Object.keys(renameMap).length>0){
+      setExpenses(prev=>prev.map(e=>
+        renameMap[e.category] ? {...e, category:renameMap[e.category]} : e
+      ));
+    }
+    setCategories(local);
+    onClose();
+  };
+
   return(
     <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="modal">
         <div className="modal-header"><span className="modal-title">Manage Categories</span><button className="btn btn-outline btn-sm" onClick={onClose}>✕</button></div>
         <div className="modal-body">
-          <p style={{fontSize:12,color:'var(--muted)'}}>Click a name or "Rename" to edit. Changes apply to new records; existing records keep their original category label.</p>
+          <p style={{fontSize:12,color:'var(--muted)'}}>Click a name or "Rename" to edit. Renaming will update <strong>all existing expense records</strong> automatically.</p>
           <div className="cat-list">
             {local.map((c,i)=>(
               <div key={c.id} className="cat-item">
@@ -709,7 +728,7 @@ function CategoryManager({categories,setCategories,onClose}){
         </div>
         <div className="modal-footer">
           <button className="btn btn-outline" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary" onClick={()=>{setCategories(local);onClose();}}>Save changes</button>
+          <button className="btn btn-primary" onClick={handleSave}>Save changes</button>
         </div>
       </div>
     </div>
