@@ -10,361 +10,209 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --bg: #f5f4f0;
-    --surface: #ffffff;
-    --surface2: #f0eeea;
-    --border: rgba(0,0,0,0.09);
-    --text: #1a1a18;
-    --muted: #6b6b65;
-    --accent: #1a3a2a;
-    --accent-light: #e8f0eb;
-    --accent-mid: #2d6b47;
-    --danger: #c0392b;
-    --danger-light: #fdf0ee;
-    --amber: #b8750a;
-    --amber-light: #fef8ee;
-    --blue: #1a4b8c;
-    --blue-light: #eef3fb;
-    --radius: 10px;
-    --radius-sm: 6px;
-  }
-  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; min-height: 100vh; }
-  #root { min-height: 100vh; }
-
-  .app { display: flex; flex-direction: column; min-height: 100vh; }
-
-  .topbar {
-    background: var(--accent);
-    color: #fff;
-    padding: 0 24px;
-    height: 56px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky; top: 0; z-index: 100;
-  }
-  .topbar-brand { display: flex; align-items: center; gap: 10px; }
-  .topbar-logo {
-    width: 32px; height: 32px; border-radius: 6px;
-    background: rgba(255,255,255,0.15);
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; color: #fff;
-  }
-  .topbar-name { font-size: 15px; font-weight: 500; letter-spacing: -0.2px; }
-  .topbar-sub { font-size: 12px; opacity: 0.6; margin-left: 6px; }
-  .topbar-actions { display: flex; gap: 8px; }
-
-  .btn {
-    border: none; cursor: pointer; border-radius: var(--radius-sm);
-    font-family: inherit; font-size: 13px; font-weight: 500;
-    padding: 7px 14px; display: inline-flex; align-items: center; gap: 6px;
-    transition: all 0.15s;
-  }
-  .btn-primary { background: var(--accent-mid); color: #fff; }
-  .btn-primary:hover { background: #245c3c; }
-  .btn-ghost { background: rgba(255,255,255,0.12); color: #fff; }
-  .btn-ghost:hover { background: rgba(255,255,255,0.2); }
-  .btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
-  .btn-outline:hover { background: var(--surface2); }
-  .btn-danger { background: var(--danger-light); color: var(--danger); border: 1px solid rgba(192,57,43,0.15); }
-  .btn-danger:hover { background: #f9d9d5; }
-  .btn-sm { padding: 5px 10px; font-size: 12px; }
-  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  .main { display: flex; flex: 1; }
-  .sidebar {
-    width: 200px; background: var(--surface); border-right: 1px solid var(--border);
-    padding: 16px 12px; display: flex; flex-direction: column; gap: 2px;
-    position: sticky; top: 56px; height: calc(100vh - 56px); overflow-y: auto;
-  }
-  .nav-item {
-    display: flex; align-items: center; gap: 8px; padding: 8px 10px;
-    border-radius: var(--radius-sm); cursor: pointer; transition: all 0.12s;
-    font-size: 13px; color: var(--muted); font-weight: 400;
-    border: none; background: none; width: 100%; text-align: left;
-  }
-  .nav-item:hover { background: var(--surface2); color: var(--text); }
-  .nav-item.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
-  .nav-icon { font-size: 15px; }
-
-  .content { flex: 1; padding: 24px; overflow-y: auto; }
-
-  .page-header { margin-bottom: 20px; }
-  .page-title { font-size: 20px; font-weight: 600; letter-spacing: -0.3px; }
-  .page-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
-
-  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
-  .stat-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 16px;
-  }
-  .stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); font-weight: 500; margin-bottom: 6px; }
-  .stat-value { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; font-family: 'DM Mono', monospace; }
-  .stat-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
-  .stat-green .stat-value { color: var(--accent-mid); }
-  .stat-amber .stat-value { color: var(--amber); }
-
-  .card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius); overflow: hidden;
-  }
-  .card-header {
-    padding: 14px 16px; border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: space-between;
-  }
-  .card-title { font-size: 13px; font-weight: 500; }
-  .card-body { padding: 16px; }
-
-  .charts-row { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; margin-bottom: 20px; }
-
-  table { width: 100%; border-collapse: collapse; }
-  th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); font-weight: 500; padding: 10px 14px; text-align: left; background: var(--surface2); }
-  td { padding: 11px 14px; border-top: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
-  tr:hover td { background: var(--surface2); }
-
-  .badge {
-    display: inline-flex; align-items: center; padding: 2px 8px;
-    border-radius: 20px; font-size: 11px; font-weight: 500;
-  }
-  .badge-fleet-maint  { background: #eef3fb; color: #1a4b8c; }
-  .badge-fleet-ins    { background: #e8f0eb; color: #1a3a2a; }
-  .badge-fleet-tng    { background: #fef8ee; color: #b8750a; }
-  .badge-pantry       { background: #feeef5; color: #9e1a5e; }
-  .badge-stationery   { background: #f3eeff; color: #5b2d9e; }
-  .badge-cleaning     { background: #eef7f7; color: #0f6e6e; }
-  .badge-it           { background: #e6f1fb; color: #185fa5; }
-  .badge-admin        { background: #f0eeea; color: #444441; }
-  .badge-adhoc        { background: #fdf0ee; color: #c0392b; }
-  .badge-others       { background: #f0eeea; color: #6b6b65; }
-
-  .filter-bar { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
-  select, input[type=text], input[type=number], input[type=date], textarea {
-    border: 1px solid var(--border); border-radius: var(--radius-sm);
-    padding: 7px 10px; font-family: inherit; font-size: 13px;
-    background: var(--surface); color: var(--text); outline: none;
-  }
-  select:focus, input:focus, textarea:focus { border-color: var(--accent-mid); box-shadow: 0 0 0 3px rgba(45,107,71,0.12); }
-
-  .modal-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.4);
-    display: flex; align-items: center; justify-content: center;
-    z-index: 200; padding: 20px;
-  }
-  .modal {
-    background: var(--surface); border-radius: 12px;
-    width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
-  }
-  .modal-header { padding: 18px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-  .modal-title { font-size: 15px; font-weight: 600; }
-  .modal-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
-  .modal-footer { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
-  .form-group { display: flex; flex-direction: column; gap: 4px; }
-  .form-label { font-size: 12px; font-weight: 500; color: var(--muted); }
-  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-
-  .upload-zone {
-    border: 2px dashed var(--border); border-radius: var(--radius);
-    padding: 36px; text-align: center; cursor: pointer;
-    transition: all 0.15s; background: var(--surface2);
-  }
-  .upload-zone:hover, .upload-zone.dragging { border-color: var(--accent-mid); background: var(--accent-light); }
-  .upload-icon { font-size: 32px; margin-bottom: 10px; }
-  .upload-text { font-size: 13px; color: var(--muted); }
-  .upload-text strong { color: var(--accent-mid); }
-
-  .scanning-state { text-align: center; padding: 32px; }
-  .scan-spinner {
-    width: 36px; height: 36px; border: 3px solid var(--accent-light);
-    border-top-color: var(--accent-mid); border-radius: 50%;
-    animation: spin 0.8s linear infinite; margin: 0 auto 14px;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .empty-state { text-align: center; padding: 48px 20px; color: var(--muted); }
-  .empty-icon { font-size: 36px; margin-bottom: 12px; opacity: 0.4; }
-
-  .amount { font-family: 'DM Mono', monospace; }
-
-  .tabs { display: flex; gap: 4px; margin-bottom: 16px; background: var(--surface2); border-radius: var(--radius-sm); padding: 3px; width: fit-content; }
-  .tab { padding: 6px 14px; border-radius: 4px; font-size: 13px; cursor: pointer; border: none; background: none; font-family: inherit; color: var(--muted); transition: all 0.12s; }
-  .tab.active { background: var(--surface); color: var(--text); font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-
-  .scan-result-preview {
-    background: var(--accent-light); border: 1px solid rgba(45,107,71,0.2);
-    border-radius: var(--radius-sm); padding: 12px; font-size: 12px; color: var(--accent);
-  }
-  .scan-badge { display: inline-flex; align-items: center; gap: 4px; background: var(--accent-mid); color: #fff; border-radius: 20px; padding: 2px 8px; font-size: 11px; margin-bottom: 8px; }
-
-  .delete-confirm { background: var(--danger-light); border: 1px solid rgba(192,57,43,0.15); border-radius: var(--radius-sm); padding: 12px; font-size: 13px; color: var(--danger); }
-
-  .year-selector { display: flex; align-items: center; gap: 8px; }
-
-  .progress-bar { background: var(--surface2); border-radius: 4px; height: 6px; overflow: hidden; }
-  .progress-fill { height: 100%; border-radius: 4px; background: var(--accent-mid); transition: width 0.5s ease; }
-
-  /* ── API Key Banner ── */
-  .api-banner {
-    background: var(--amber-light); border-bottom: 1px solid rgba(184,117,10,0.2);
-    padding: 10px 24px; font-size: 12px; color: var(--amber);
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-  }
-  .api-banner input { font-size: 12px; padding: 4px 8px; width: 280px; font-family: 'DM Mono', monospace; }
-  .api-banner .btn { font-size: 11px; padding: 4px 10px; }
-
-  @media (max-width: 900px) {
-    .stats-grid { grid-template-columns: repeat(2, 1fr); }
-    .charts-row { grid-template-columns: 1fr; }
-  }
-  @media (max-width: 640px) {
-    .sidebar { display: none; }
-    .topbar-sub { display: none; }
-  }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f4f0;--surface:#fff;--surface2:#f0eeea;--border:rgba(0,0,0,0.09);
+  --text:#1a1a18;--muted:#6b6b65;
+  --accent:#1a3a2a;--accent-light:#e8f0eb;--accent-mid:#2d6b47;
+  --danger:#c0392b;--danger-light:#fdf0ee;
+  --amber:#b8750a;--amber-light:#fef8ee;
+  --blue:#1a4b8c;--blue-light:#eef3fb;
+  --radius:10px;--radius-sm:6px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh}
+#root{min-height:100vh}
+.app{display:flex;flex-direction:column;min-height:100vh}
+.topbar{background:var(--accent);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.topbar-brand{display:flex;align-items:center;gap:10px}
+.topbar-logo{width:32px;height:32px;border-radius:6px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:13px;font-weight:500}
+.topbar-name{font-size:15px;font-weight:500;letter-spacing:-0.2px}
+.topbar-sub{font-size:12px;opacity:0.6;margin-left:6px}
+.topbar-actions{display:flex;gap:8px}
+.btn{border:none;cursor:pointer;border-radius:var(--radius-sm);font-family:inherit;font-size:13px;font-weight:500;padding:7px 14px;display:inline-flex;align-items:center;gap:6px;transition:all 0.15s}
+.btn-primary{background:var(--accent-mid);color:#fff}.btn-primary:hover{background:#245c3c}
+.btn-ghost{background:rgba(255,255,255,0.12);color:#fff}.btn-ghost:hover{background:rgba(255,255,255,0.2)}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}.btn-outline:hover{background:var(--surface2)}
+.btn-danger{background:var(--danger-light);color:var(--danger);border:1px solid rgba(192,57,43,0.15)}.btn-danger:hover{background:#f9d9d5}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn:disabled{opacity:0.45;cursor:not-allowed}
+.main{display:flex;flex:1}
+.sidebar{width:200px;background:var(--surface);border-right:1px solid var(--border);padding:16px 12px;display:flex;flex-direction:column;gap:2px;position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--radius-sm);cursor:pointer;transition:all 0.12s;font-size:13px;color:var(--muted);font-weight:400;border:none;background:none;width:100%;text-align:left}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--accent-light);color:var(--accent);font-weight:500}
+.nav-icon{font-size:15px}
+.content{flex:1;padding:24px;overflow-y:auto}
+.page-header{margin-bottom:20px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.page-title{font-size:20px;font-weight:600;letter-spacing:-0.3px}
+.page-sub{font-size:13px;color:var(--muted);margin-top:2px}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.stat-label{font-size:11px;text-transform:uppercase;letter-spacing:0.6px;color:var(--muted);font-weight:500;margin-bottom:6px}
+.stat-value{font-size:21px;font-weight:600;letter-spacing:-0.5px;font-family:'DM Mono',monospace}
+.stat-sub{font-size:11px;color:var(--muted);margin-top:4px}
+.stat-green .stat-value{color:var(--accent-mid)}
+.stat-amber .stat-value{color:var(--amber)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.card-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.card-title{font-size:13px;font-weight:500}
+.card-body{padding:16px}
+.charts-row{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:20px}
+table{width:100%;border-collapse:collapse}
+th{font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);font-weight:500;padding:10px 14px;text-align:left;background:var(--surface2)}
+td{padding:11px 14px;border-top:1px solid var(--border);font-size:13px;vertical-align:middle}
+tr.clickable{cursor:pointer}
+tr.clickable:hover td{background:var(--accent-light)}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500;white-space:nowrap}
+.b0{background:#e8f0eb;color:#1a3a2a}.b1{background:#eef3fb;color:#1a4b8c}.b2{background:#f3eeff;color:#5b2d9e}
+.b3{background:#fef6ee;color:#a05c10}.b4{background:#eef7f7;color:#0f6e6e}.b5{background:#feeef5;color:#9e1a5e}
+.b6{background:#f0eeea;color:#5f5e5a}.b7{background:#fef8ee;color:#b8750a}.b8{background:#e6f1fb;color:#185fa5}
+.filter-bar{display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap}
+select,input[type=text],input[type=number],input[type=date],textarea{border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 10px;font-family:inherit;font-size:13px;background:var(--surface);color:var(--text);outline:none}
+select:focus,input:focus,textarea:focus{border-color:var(--accent-mid);box-shadow:0 0 0 3px rgba(45,107,71,0.12)}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-label{font-size:12px;font-weight:500;color:var(--muted)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px}
+.modal{background:var(--surface);border-radius:12px;width:100%;max-width:520px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.18)}
+.modal-lg{max-width:700px}
+.modal-header{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.modal-title{font-size:15px;font-weight:600;margin-top:2px}
+.modal-body{padding:20px;display:flex;flex-direction:column;gap:16px}
+.modal-footer{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+.detail-block{background:var(--surface2);border-radius:var(--radius-sm);padding:12px 14px}
+.attachment-box{border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden}
+.attachment-img{width:100%;max-height:400px;object-fit:contain;background:var(--surface2);display:block}
+.attachment-pdf{width:100%;height:400px;border:none;display:block}
+.attachment-placeholder{padding:28px;text-align:center;color:var(--muted);font-size:13px;background:var(--surface2)}
+.upload-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:36px;text-align:center;cursor:pointer;transition:all 0.15s;background:var(--surface2)}
+.upload-zone:hover,.upload-zone.dragging{border-color:var(--accent-mid);background:var(--accent-light)}
+.upload-icon{font-size:32px;margin-bottom:10px}
+.upload-text{font-size:13px;color:var(--muted)}
+.upload-text strong{color:var(--accent-mid)}
+.scan-spinner{width:36px;height:36px;border:3px solid var(--accent-light);border-top-color:var(--accent-mid);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.scanning-state{text-align:center;padding:32px}
+.scan-result-preview{background:var(--accent-light);border:1px solid rgba(45,107,71,0.2);border-radius:var(--radius-sm);padding:12px;font-size:12px;color:var(--accent)}
+.scan-badge{display:inline-flex;align-items:center;gap:4px;background:var(--accent-mid);color:#fff;border-radius:20px;padding:2px 8px;font-size:11px;margin-bottom:8px}
+.empty-state{text-align:center;padding:48px 20px;color:var(--muted)}
+.empty-icon{font-size:36px;margin-bottom:12px;opacity:0.4}
+.amount{font-family:'DM Mono',monospace}
+.progress-bar{background:var(--surface2);border-radius:4px;height:6px;overflow:hidden}
+.progress-fill{height:100%;border-radius:4px;background:var(--accent-mid);transition:width 0.5s ease}
+.year-selector{display:flex;align-items:center;gap:8px}
+.delete-confirm{background:var(--danger-light);border:1px solid rgba(192,57,43,0.15);border-radius:var(--radius-sm);padding:12px;font-size:13px;color:var(--danger)}
+.api-banner{background:var(--amber-light);border-bottom:1px solid rgba(184,117,10,0.2);padding:10px 24px;font-size:12px;color:var(--amber);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.api-banner input{font-size:12px;padding:4px 8px;width:280px;font-family:'DM Mono',monospace}
+.cat-list{display:flex;flex-direction:column;gap:6px;max-height:380px;overflow-y:auto}
+.cat-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface)}
+.cat-swatch{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.cat-name{flex:1;font-size:13px}
+.cat-add-row{display:flex;gap:8px;margin-top:10px}
+.cat-add-row input{flex:1}
+.hint{font-size:11px;color:var(--muted)}
+.nav-divider{height:1px;background:var(--border);margin:8px 0}
+@media(max-width:900px){.stats-grid{grid-template-columns:repeat(2,1fr)}.charts-row{grid-template-columns:1fr}}
+@media(max-width:640px){.sidebar{display:none}.topbar-sub{display:none}}
 </style>
 </head>
 <body>
 <div id="root"></div>
-
 <script type="text/babel">
 const { useState, useEffect, useRef } = React;
 
-/* ─────────────────────────── CONSTANTS ─────────────────────────── */
-const CATEGORIES = [
-  'Fleet — Maintenance',
-  'Fleet — Insurance & Road Tax',
-  'Fleet — Touch & Go',
-  'Office Inventory — Pantry',
-  'Office Inventory — Stationery',
-  'Office Inventory — Cleaning',
-  'IT Asset Management',
-  'Administration',
-  'Ad Hoc Expenses',
-  'Others',
-];
+const CHART_COLORS = ['#2d6b47','#1a4b8c','#5b2d9e','#b8750a','#0f6e6e','#9e1a5e','#c0392b','#185fa5','#5f5e5a','#a05c10'];
 
-const CAT_BADGE = {
-  'Fleet — Maintenance':           'badge-fleet-maint',
-  'Fleet — Insurance & Road Tax':  'badge-fleet-ins',
-  'Fleet — Touch & Go':            'badge-fleet-tng',
-  'Office Inventory — Pantry':     'badge-pantry',
-  'Office Inventory — Stationery': 'badge-stationery',
-  'Office Inventory — Cleaning':   'badge-cleaning',
-  'IT Asset Management':           'badge-it',
-  'Administration':                'badge-admin',
-  'Ad Hoc Expenses':               'badge-adhoc',
-  'Others':                        'badge-others',
-};
-
-const CHART_COLORS = [
-  '#2d6b47','#1a4b8c','#0f6e6e','#b8750a',
-  '#9e1a5e','#5b2d9e','#a05c10','#c0392b','#5f5e5a','#185fa5',
+const DEFAULT_CATEGORIES = [
+  {id:'fleet-maint', name:'Fleet — Maintenance'},
+  {id:'fleet-ins',   name:'Fleet — Insurance & Road Tax'},
+  {id:'fleet-tng',   name:'Fleet — Touch & Go'},
+  {id:'inv-pantry',  name:'Office Inventory — Pantry'},
+  {id:'inv-stat',    name:'Office Inventory — Stationery'},
+  {id:'inv-clean',   name:'Office Inventory — Cleaning'},
+  {id:'it-asset',    name:'IT Asset Management'},
+  {id:'admin',       name:'Administration'},
+  {id:'adhoc',       name:'Ad Hoc Expenses'},
 ];
 
 const SAMPLE_DATA = [
-  { id: 1,  date: '2026-01-08', vendor: 'Petronas',         amount: 320.00,  category: 'Fleet — Maintenance',           description: 'Engine oil & service, Proton X70' },
-  { id: 2,  date: '2026-01-15', vendor: 'Pos Malaysia',     amount: 1800.00, category: 'Fleet — Insurance & Road Tax',   description: 'Road tax renewal, WXX1234' },
-  { id: 3,  date: '2026-02-03', vendor: 'Touch & Go',       amount: 200.00,  category: 'Fleet — Touch & Go',             description: 'TnG reload, company vehicle' },
-  { id: 4,  date: '2026-02-10', vendor: 'Jaya Grocer',      amount: 185.50,  category: 'Office Inventory — Pantry',      description: 'Coffee, tea, snacks for office' },
-  { id: 5,  date: '2026-02-20', vendor: 'MPH',              amount: 95.00,   category: 'Office Inventory — Stationery',  description: 'A4 paper, pens, folders' },
-  { id: 6,  date: '2026-03-05', vendor: 'Ecolab',           amount: 260.00,  category: 'Office Inventory — Cleaning',    description: 'Monthly cleaning supplies' },
-  { id: 7,  date: '2026-03-12', vendor: 'Dell Malaysia',    amount: 4200.00, category: 'IT Asset Management',            description: 'Monitor replacement, finance dept' },
-  { id: 8,  date: '2026-03-18', vendor: 'Lembaga Hasil',    amount: 500.00,  category: 'Administration',                 description: 'Stamp duty, tenancy agreement' },
-  { id: 9,  date: '2026-03-25', vendor: 'Hazloc Solution',  amount: 300.00,  category: 'Ad Hoc Expenses',                description: 'Pest control, unit 15-7 & 15-8' },
-  { id: 10, date: '2026-04-01', vendor: 'Sachenais Food',   amount: 1300.00, category: 'Ad Hoc Expenses',                description: 'Catering, 25 pax, 1 & 2 Apr 2026' },
+  {id:1, date:'2026-01-08', vendor:'Petronas',       amount:320.00,  category:'Fleet — Maintenance',          description:'Engine oil & service, Proton X70',   fileData:null,fileName:null,fileType:null},
+  {id:2, date:'2026-01-15', vendor:'Pos Malaysia',   amount:1800.00, category:'Fleet — Insurance & Road Tax', description:'Road tax renewal, WXX1234',           fileData:null,fileName:null,fileType:null},
+  {id:3, date:'2026-02-03', vendor:'Touch & Go',     amount:200.00,  category:'Fleet — Touch & Go',           description:'TnG reload, company vehicle',          fileData:null,fileName:null,fileType:null},
+  {id:4, date:'2026-02-10', vendor:'Jaya Grocer',    amount:185.50,  category:'Office Inventory — Pantry',    description:'Coffee, tea, snacks for office',       fileData:null,fileName:null,fileType:null},
+  {id:5, date:'2026-02-20', vendor:'MPH',            amount:95.00,   category:'Office Inventory — Stationery',description:'A4 paper, pens, folders',              fileData:null,fileName:null,fileType:null},
+  {id:6, date:'2026-03-05', vendor:'Ecolab',         amount:260.00,  category:'Office Inventory — Cleaning',  description:'Monthly cleaning supplies',            fileData:null,fileName:null,fileType:null},
+  {id:7, date:'2026-03-12', vendor:'Dell Malaysia',  amount:4200.00, category:'IT Asset Management',          description:'Monitor replacement, finance dept',    fileData:null,fileName:null,fileType:null},
+  {id:8, date:'2026-03-18', vendor:'Lembaga Hasil',  amount:500.00,  category:'Administration',               description:'Stamp duty, tenancy agreement',        fileData:null,fileName:null,fileType:null},
+  {id:9, date:'2026-03-25', vendor:'Hazloc Solution',amount:300.00,  category:'Ad Hoc Expenses',              description:'Pest control, unit 15-7 & 15-8',      fileData:null,fileName:null,fileType:null},
+  {id:10,date:'2026-04-01', vendor:'Sachenais Food', amount:1300.00, category:'Ad Hoc Expenses',              description:'Catering 25 pax, 1 & 2 Apr 2026',    fileData:null,fileName:null,fileType:null},
 ];
 
-/* ─────────────────────────── HELPERS ─────────────────────────── */
-const fmt = (n) =>
-  'RM ' + Number(n).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmt = n => 'RM '+Number(n).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
+const bc  = i => 'b'+(i%9);
 
-const STORAGE_KEY = 'farcapital_expenses';
-const API_KEY_STORAGE = 'farcapital_apikey';
+const SKEY='farcapital_exp_v4', AKEY='farcapital_apikey', CKEY='farcapital_cat_v4';
+const loadEx  = ()=>{ try{ const r=localStorage.getItem(SKEY); return r?JSON.parse(r):SAMPLE_DATA; }catch{return SAMPLE_DATA;} };
+const loadCat = ()=>{ try{ const r=localStorage.getItem(CKEY); return r?JSON.parse(r):DEFAULT_CATEGORIES; }catch{return DEFAULT_CATEGORIES;} };
 
-function loadExpenses() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : SAMPLE_DATA;
-  } catch { return SAMPLE_DATA; }
-}
-
-function saveExpenses(list) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); } catch {}
-}
-
-/* ═══════════════════════════ APP ROOT ═══════════════════════════ */
-function App() {
-  const [page, setPage] = useState('dashboard');
-  const [expenses, setExpenses] = useState(loadExpenses);
-  const [showAdd, setShowAdd] = useState(false);
-  const [editItem, setEditItem] = useState(null);
+/* ════════════════════ APP ════════════════════ */
+function App(){
+  const [page,       setPage]       = useState('dashboard');
+  const [expenses,   setExpenses]   = useState(loadEx);
+  const [categories, setCategories] = useState(loadCat);
+  const [showAdd,    setShowAdd]    = useState(false);
+  const [editItem,   setEditItem]   = useState(null);
   const [deleteItem, setDeleteItem] = useState(null);
+  const [detailItem, setDetailItem] = useState(null);
+  const [showCatMgr, setShowCatMgr] = useState(false);
   const [filterYear, setFilterYear] = useState(new Date().getFullYear());
-  const [filterMonth, setFilterMonth] = useState('');
-  const [filterCat, setFilterCat] = useState('');
-  const [viewYear, setViewYear] = useState(new Date().getFullYear());
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem(API_KEY_STORAGE) || '');
-  const [apiKeyInput, setApiKeyInput] = useState('');
-  const [showApiInput, setShowApiInput] = useState(false);
+  const [filterMonth,setFilterMonth]= useState('');
+  const [filterCat,  setFilterCat]  = useState('');
+  const [viewYear,   setViewYear]   = useState(new Date().getFullYear());
+  const [apiKey,     setApiKey]     = useState(()=>localStorage.getItem(AKEY)||'');
+  const [apiInput,   setApiInput]   = useState('');
+  const [showApi,    setShowApi]    = useState(false);
   const nextId = useRef(Date.now());
 
-  useEffect(() => { saveExpenses(expenses); }, [expenses]);
+  useEffect(()=>{ try{localStorage.setItem(SKEY,JSON.stringify(expenses));}catch{} },[expenses]);
+  useEffect(()=>{ try{localStorage.setItem(CKEY,JSON.stringify(categories));}catch{} },[categories]);
 
-  const allYears = [...new Set([...expenses.map(e => new Date(e.date).getFullYear()), new Date().getFullYear()])].sort((a,b) => b-a);
-  const yearExpenses = expenses.filter(e => new Date(e.date).getFullYear() === viewYear);
-  const total = yearExpenses.reduce((s, e) => s + e.amount, 0);
-  const now = new Date();
-  const monthExpenses = expenses.filter(e => {
-    const d = new Date(e.date);
-    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-  });
-  const monthTotal = monthExpenses.reduce((s, e) => s + e.amount, 0);
-  const catTotals = {};
-  yearExpenses.forEach(e => { catTotals[e.category] = (catTotals[e.category] || 0) + e.amount; });
-  const topCat = Object.entries(catTotals).sort((a,b) => b[1]-a[1])[0];
-  const monthlyTotals = Array(12).fill(0);
-  yearExpenses.forEach(e => { monthlyTotals[new Date(e.date).getMonth()] += e.amount; });
+  const catNames = categories.map(c=>c.name);
 
-  const addExpense = (data, fromUpload = false) => {
-    const newList = [...expenses, { ...data, id: nextId.current++, receipt: null }];
-    setExpenses(newList);
+  const allYears = [...new Set([...expenses.map(e=>new Date(e.date).getFullYear()),new Date().getFullYear()])].sort((a,b)=>b-a);
+  const yExp   = expenses.filter(e=>new Date(e.date).getFullYear()===viewYear);
+  const total  = yExp.reduce((s,e)=>s+e.amount,0);
+  const now    = new Date();
+  const mExp   = expenses.filter(e=>{ const d=new Date(e.date); return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth(); });
+  const mTotal = mExp.reduce((s,e)=>s+e.amount,0);
+  const catTot = {};
+  yExp.forEach(e=>{ catTot[e.category]=(catTot[e.category]||0)+e.amount; });
+  const topCat = Object.entries(catTot).sort((a,b)=>b[1]-a[1])[0];
+  const mTotals= Array(12).fill(0);
+  yExp.forEach(e=>{ mTotals[new Date(e.date).getMonth()]+=e.amount; });
+
+  const addExpense = (data, fromUpload=false) => {
+    setExpenses(prev=>[...prev,{...data,id:nextId.current++}]);
     setShowAdd(false);
-    if (fromUpload) setPage('expenses');
+    if(fromUpload) setPage('expenses');
   };
-  const updateExpense = (data) => {
-    setExpenses(prev => prev.map(e => e.id === data.id ? { ...data } : e));
-    setEditItem(null);
-  };
-  const deleteExpense = (id) => {
-    setExpenses(prev => prev.filter(e => e.id !== id));
-    setDeleteItem(null);
-  };
-  const saveApiKey = () => {
-    const trimmed = apiKeyInput.trim();
-    setApiKey(trimmed);
-    localStorage.setItem(API_KEY_STORAGE, trimmed);
-    setShowApiInput(false);
-    setApiKeyInput('');
-  };
+  const updExpense = data => { setExpenses(prev=>prev.map(e=>e.id===data.id?{...data}:e)); setEditItem(null); };
+  const delExpense = id   => { setExpenses(prev=>prev.filter(e=>e.id!==id)); setDeleteItem(null); };
+  const saveApi    = ()   => { const t=apiInput.trim(); setApiKey(t); localStorage.setItem(AKEY,t); setShowApi(false); setApiInput(''); };
 
-  const filteredExpenses = expenses.filter(e => {
-    const d = new Date(e.date);
-    if (filterYear && d.getFullYear() !== Number(filterYear)) return false;
-    if (filterMonth && (d.getMonth() + 1) !== Number(filterMonth)) return false;
-    if (filterCat && e.category !== filterCat) return false;
+  const filtered = expenses.filter(e=>{
+    const d=new Date(e.date);
+    if(filterYear  && d.getFullYear()!==Number(filterYear))   return false;
+    if(filterMonth && (d.getMonth()+1)!==Number(filterMonth)) return false;
+    if(filterCat   && e.category!==filterCat)                 return false;
     return true;
   });
 
-  const navItems = [
-    { id: 'dashboard', icon: '▦', label: 'Dashboard' },
-    { id: 'expenses',  icon: '≡', label: 'All Expenses' },
-    { id: 'upload',    icon: '⬆', label: 'Scan Receipt' },
-  ];
+  const nav=[{id:'dashboard',icon:'▦',label:'Dashboard'},{id:'expenses',icon:'≡',label:'All Expenses'},{id:'upload',icon:'⬆',label:'Scan Receipt'}];
 
-  return (
+  return(
     <div className="app">
-      {/* ── Top bar ── */}
+      {/* ── Topbar ── */}
       <div className="topbar">
         <div className="topbar-brand">
           <div className="topbar-logo">FC</div>
@@ -372,253 +220,125 @@ function App() {
           <span className="topbar-sub">Expense Manager</span>
         </div>
         <div className="topbar-actions">
-          <button className="btn btn-ghost btn-sm" onClick={() => { setShowApiInput(v => !v); setApiKeyInput(''); }}>
-            {apiKey ? '🔑 API Key ✓' : '🔑 Set API Key'}
-          </button>
-          <button className="btn btn-ghost btn-sm" onClick={() => setPage('upload')}>⬆ Scan Receipt</button>
-          <button className="btn btn-primary btn-sm" onClick={() => setShowAdd(true)}>+ Add Expense</button>
+          <button className="btn btn-ghost btn-sm" onClick={()=>{setShowApi(v=>!v);setApiInput('');}}>{apiKey?'🔑 API Key ✓':'🔑 Set API Key'}</button>
+          <button className="btn btn-ghost btn-sm" onClick={()=>setPage('upload')}>⬆ Scan Receipt</button>
+          <button className="btn btn-primary btn-sm" onClick={()=>setShowAdd(true)}>+ Add Expense</button>
         </div>
       </div>
 
-      {/* ── API Key banner ── */}
-      {showApiInput && (
+      {showApi&&(
         <div className="api-banner">
-          <span>Enter your Anthropic API key to enable AI receipt scanning:</span>
-          <input
-            type="password"
-            placeholder="sk-ant-..."
-            value={apiKeyInput}
-            onChange={e => setApiKeyInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && saveApiKey()}
-          />
-          <button className="btn btn-outline btn-sm" onClick={saveApiKey}>Save</button>
-          <button className="btn btn-outline btn-sm" onClick={() => setShowApiInput(false)}>Cancel</button>
-          <span style={{ opacity: 0.7 }}>Key is stored in your browser only.</span>
+          <span>Anthropic API key (enables AI scanning):</span>
+          <input type="password" placeholder="sk-ant-..." value={apiInput} onChange={e=>setApiInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&saveApi()}/>
+          <button className="btn btn-outline btn-sm" onClick={saveApi}>Save</button>
+          <button className="btn btn-outline btn-sm" onClick={()=>setShowApi(false)}>Cancel</button>
+          <span style={{opacity:0.7}}>Stored in your browser only.</span>
         </div>
       )}
 
       <div className="main">
         {/* ── Sidebar ── */}
         <nav className="sidebar">
-          {navItems.map(n => (
-            <button
-              key={n.id}
-              className={`nav-item ${page === n.id ? 'active' : ''}`}
-              onClick={() => setPage(n.id)}
-            >
+          {nav.map(n=>(
+            <button key={n.id} className={`nav-item ${page===n.id?'active':''}`} onClick={()=>setPage(n.id)}>
               <span className="nav-icon">{n.icon}</span>{n.label}
             </button>
           ))}
+          <div className="nav-divider" style={{marginTop:'auto'}}></div>
+          <button className="nav-item" onClick={()=>setShowCatMgr(true)}>
+            <span className="nav-icon">⚙</span>Categories
+          </button>
         </nav>
 
-        {/* ── Main content ── */}
+        {/* ── Content ── */}
         <div className="content">
-          {page === 'dashboard' && (
-            <Dashboard
-              yearExpenses={yearExpenses}
-              total={total}
-              monthTotal={monthTotal}
-              monthExpenses={monthExpenses}
-              topCat={topCat}
-              catTotals={catTotals}
-              monthlyTotals={monthlyTotals}
-              viewYear={viewYear}
-              setViewYear={setViewYear}
-              allYears={allYears}
-            />
-          )}
-          {page === 'expenses' && (
-            <ExpensesPage
-              expenses={filteredExpenses}
-              allExpenses={expenses}
-              filterYear={filterYear}
-              setFilterYear={setFilterYear}
-              filterMonth={filterMonth}
-              setFilterMonth={setFilterMonth}
-              filterCat={filterCat}
-              setFilterCat={setFilterCat}
-              onEdit={setEditItem}
-              onDelete={setDeleteItem}
-            />
-          )}
-          {page === 'upload' && (
-            <UploadPage onAdd={(data) => addExpense(data, true)} apiKey={apiKey} />
-          )}
+          {page==='dashboard'&&<Dashboard yExp={yExp} total={total} mTotal={mTotal} mExp={mExp} topCat={topCat} catTot={catTot} mTotals={mTotals} viewYear={viewYear} setViewYear={setViewYear} allYears={allYears} categories={categories} onDetail={setDetailItem}/>}
+          {page==='expenses' &&<ExpensesPage expenses={filtered} allExp={expenses} filterYear={filterYear} setFilterYear={setFilterYear} filterMonth={filterMonth} setFilterMonth={setFilterMonth} filterCat={filterCat} setFilterCat={setFilterCat} onEdit={setEditItem} onDelete={setDeleteItem} onDetail={setDetailItem} categories={categories}/>}
+          {page==='upload'   &&<UploadPage onAdd={d=>addExpense(d,true)} apiKey={apiKey} catNames={catNames}/>}
         </div>
       </div>
 
-      {/* ── Modals ── */}
-      {showAdd   && <ExpenseModal title="Add Expense"  onSave={addExpense}    onClose={() => setShowAdd(false)} />}
-      {editItem  && <ExpenseModal title="Edit Expense" item={editItem} onSave={updateExpense} onClose={() => setEditItem(null)} />}
-      {deleteItem && <DeleteModal item={deleteItem} onConfirm={() => deleteExpense(deleteItem.id)} onClose={() => setDeleteItem(null)} />}
+      {showAdd    &&<ExpenseModal title="Add Expense"  catNames={catNames} onSave={addExpense}   onClose={()=>setShowAdd(false)}/>}
+      {editItem   &&<ExpenseModal title="Edit Expense" catNames={catNames} item={editItem} onSave={updExpense} onClose={()=>setEditItem(null)}/>}
+      {deleteItem &&<DeleteModal  item={deleteItem} onConfirm={()=>delExpense(deleteItem.id)} onClose={()=>setDeleteItem(null)}/>}
+      {detailItem &&<DetailModal  item={detailItem} categories={categories} onEdit={()=>{setEditItem(detailItem);setDetailItem(null);}} onDelete={()=>{setDeleteItem(detailItem);setDetailItem(null);}} onClose={()=>setDetailItem(null)}/>}
+      {showCatMgr &&<CategoryManager categories={categories} setCategories={setCategories} onClose={()=>setShowCatMgr(false)}/>}
     </div>
   );
 }
 
-/* ═══════════════════════════ DASHBOARD ═══════════════════════════ */
-function Dashboard({ yearExpenses, total, monthTotal, monthExpenses, topCat, catTotals, monthlyTotals, viewYear, setViewYear, allYears }) {
-  const barRef   = useRef(null);
-  const donutRef = useRef(null);
-  const barChart   = useRef(null);
-  const donutChart = useRef(null);
+/* ════════════════════ DASHBOARD ════════════════════ */
+function Dashboard({yExp,total,mTotal,mExp,topCat,catTot,mTotals,viewYear,setViewYear,allYears,categories,onDetail}){
+  const barRef=useRef(), donutRef=useRef(), barC=useRef(), donutC=useRef();
+  const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  useEffect(()=>{
+    if(!barRef.current)return;
+    if(barC.current)barC.current.destroy();
+    barC.current=new Chart(barRef.current,{type:'bar',data:{labels:MONTHS,datasets:[{label:'RM',data:mTotals,backgroundColor:'#2d6b47',borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:11},color:'#6b6b65'}},y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:11},color:'#6b6b65',callback:v=>v>=1000?'RM '+(v/1000).toFixed(0)+'k':'RM '+v}}}}});
+    return()=>{if(barC.current)barC.current.destroy();};
+  },[mTotals]);
 
-  useEffect(() => {
-    if (!barRef.current) return;
-    if (barChart.current) barChart.current.destroy();
-    barChart.current = new Chart(barRef.current, {
-      type: 'bar',
-      data: {
-        labels: MONTHS,
-        datasets: [{
-          label: 'Expenses (RM)',
-          data: monthlyTotals,
-          backgroundColor: '#2d6b47',
-          borderRadius: 4,
-          borderSkipped: false,
-        }],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#6b6b65' } },
-          y: {
-            grid: { color: 'rgba(0,0,0,0.05)' },
-            ticks: {
-              font: { size: 11 }, color: '#6b6b65',
-              callback: v => v >= 1000 ? 'RM ' + (v/1000).toFixed(0) + 'k' : 'RM ' + v,
-            },
-          },
-        },
-      },
-    });
-    return () => { if (barChart.current) barChart.current.destroy(); };
-  }, [monthlyTotals]);
+  useEffect(()=>{
+    if(!donutRef.current)return;
+    if(donutC.current)donutC.current.destroy();
+    const cats=Object.keys(catTot); if(!cats.length)return;
+    donutC.current=new Chart(donutRef.current,{type:'doughnut',data:{labels:cats,datasets:[{data:cats.map(c=>catTot[c]),backgroundColor:CHART_COLORS.slice(0,cats.length),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false}}}});
+    return()=>{if(donutC.current)donutC.current.destroy();};
+  },[catTot]);
 
-  useEffect(() => {
-    if (!donutRef.current) return;
-    if (donutChart.current) donutChart.current.destroy();
-    const cats = Object.keys(catTotals);
-    if (!cats.length) return;
-    donutChart.current = new Chart(donutRef.current, {
-      type: 'doughnut',
-      data: {
-        labels: cats,
-        datasets: [{
-          data: cats.map(c => catTotals[c]),
-          backgroundColor: CHART_COLORS.slice(0, cats.length),
-          borderWidth: 0,
-        }],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: '68%',
-        plugins: { legend: { display: false } },
-      },
-    });
-    return () => { if (donutChart.current) donutChart.current.destroy(); };
-  }, [catTotals]);
+  const sorted=Object.entries(catTot).sort((a,b)=>b[1]-a[1]);
+  const maxC=sorted[0]?.[1]||1;
 
-  const sortedCats = Object.entries(catTotals).sort((a,b) => b[1]-a[1]);
-  const maxCat = sortedCats[0]?.[1] || 1;
-
-  return (
+  return(
     <div>
-      <div className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          <div className="page-title">Overview</div>
-          <div className="page-sub">Financial snapshot for Far Capital</div>
-        </div>
-        <div className="year-selector">
-          <span style={{ fontSize: 12, color: 'var(--muted)' }}>Viewing</span>
-          <select value={viewYear} onChange={e => setViewYear(Number(e.target.value))}>
-            {allYears.map(y => <option key={y} value={y}>{y}</option>)}
-          </select>
+      <div className="page-header">
+        <div><div className="page-title">Overview</div><div className="page-sub">Financial snapshot for Far Capital</div></div>
+        <div className="year-selector"><span style={{fontSize:12,color:'var(--muted)'}}>Year</span>
+          <select value={viewYear} onChange={e=>setViewYear(Number(e.target.value))}>{allYears.map(y=><option key={y} value={y}>{y}</option>)}</select>
         </div>
       </div>
-
-      {/* Stats */}
       <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-label">Annual Total ({viewYear})</div>
-          <div className="stat-value">{fmt(total)}</div>
-          <div className="stat-sub">{yearExpenses.length} transactions</div>
-        </div>
-        <div className="stat-card stat-amber">
-          <div className="stat-label">This Month</div>
-          <div className="stat-value">{fmt(monthTotal)}</div>
-          <div className="stat-sub">{monthExpenses.length} transactions</div>
-        </div>
-        <div className="stat-card stat-green">
-          <div className="stat-label">Monthly Average</div>
-          <div className="stat-value">{fmt(total / 12)}</div>
-          <div className="stat-sub">Based on full year</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Top Category</div>
-          <div className="stat-value" style={{ fontSize: 15, marginTop: 4 }}>{topCat ? topCat[0] : '—'}</div>
-          <div className="stat-sub">{topCat ? fmt(topCat[1]) : '—'}</div>
-        </div>
+        <div className="stat-card"><div className="stat-label">Annual Total ({viewYear})</div><div className="stat-value">{fmt(total)}</div><div className="stat-sub">{yExp.length} transactions</div></div>
+        <div className="stat-card stat-amber"><div className="stat-label">This Month</div><div className="stat-value">{fmt(mTotal)}</div><div className="stat-sub">{mExp.length} transactions</div></div>
+        <div className="stat-card stat-green"><div className="stat-label">Monthly Average</div><div className="stat-value">{fmt(total/12)}</div><div className="stat-sub">Full year basis</div></div>
+        <div className="stat-card"><div className="stat-label">Top Category</div><div className="stat-value" style={{fontSize:14,marginTop:4}}>{topCat?topCat[0]:'—'}</div><div className="stat-sub">{topCat?fmt(topCat[1]):'—'}</div></div>
       </div>
-
-      {/* Charts */}
       <div className="charts-row">
         <div className="card">
-          <div className="card-header">
-            <span className="card-title">Monthly spend — {viewYear}</span>
-          </div>
-          <div className="card-body">
-            <div style={{ position: 'relative', height: 210 }}>
-              <canvas ref={barRef}></canvas>
-            </div>
-          </div>
+          <div className="card-header"><span className="card-title">Monthly spend — {viewYear}</span></div>
+          <div className="card-body"><div style={{position:'relative',height:210}}><canvas ref={barRef}></canvas></div></div>
         </div>
         <div className="card">
           <div className="card-header"><span className="card-title">By category</span></div>
           <div className="card-body">
-            <div style={{ position: 'relative', height: 140, marginBottom: 16 }}>
-              <canvas ref={donutRef}></canvas>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-              {sortedCats.slice(0,5).map(([cat, amt]) => (
+            <div style={{position:'relative',height:140,marginBottom:16}}><canvas ref={donutRef}></canvas></div>
+            <div style={{display:'flex',flexDirection:'column',gap:7}}>
+              {sorted.slice(0,5).map(([cat,amt])=>(
                 <div key={cat}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 3 }}>
-                    <span style={{ color: 'var(--muted)' }}>{cat}</span>
-                    <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11 }}>{fmt(amt)}</span>
-                  </div>
-                  <div className="progress-bar">
-                    <div className="progress-fill" style={{ width: (amt / maxCat * 100) + '%' }}></div>
-                  </div>
+                  <div style={{display:'flex',justifyContent:'space-between',fontSize:11,marginBottom:3}}><span style={{color:'var(--muted)'}}>{cat}</span><span style={{fontFamily:'DM Mono,monospace',fontSize:11}}>{fmt(amt)}</span></div>
+                  <div className="progress-bar"><div className="progress-fill" style={{width:(amt/maxC*100)+'%'}}></div></div>
                 </div>
               ))}
             </div>
           </div>
         </div>
       </div>
-
-      {/* Recent table */}
       <div className="card">
-        <div className="card-header"><span className="card-title">Recent transactions</span></div>
+        <div className="card-header"><span className="card-title">Recent transactions</span><span className="hint">Double-click a row to view details</span></div>
         <table>
-          <thead>
-            <tr><th>Date</th><th>Vendor</th><th>Category</th><th>Description</th><th style={{ textAlign: 'right' }}>Amount</th></tr>
-          </thead>
+          <thead><tr><th>Date</th><th>Vendor</th><th>Category</th><th>Description</th><th style={{textAlign:'right'}}>Amount</th></tr></thead>
           <tbody>
-            {yearExpenses.slice(-8).reverse().map(e => (
-              <tr key={e.id}>
-                <td style={{ color: 'var(--muted)', fontSize: 12, whiteSpace: 'nowrap' }}>
-                  {new Date(e.date).toLocaleDateString('en-MY', { day: '2-digit', month: 'short' })}
-                </td>
-                <td style={{ fontWeight: 500 }}>{e.vendor}</td>
-                <td><span className={`badge ${CAT_BADGE[e.category] || 'badge-other'}`}>{e.category}</span></td>
-                <td style={{ color: 'var(--muted)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.description}</td>
-                <td style={{ textAlign: 'right' }} className="amount">{fmt(e.amount)}</td>
-              </tr>
-            ))}
+            {yExp.slice(-8).reverse().map(e=>{
+              const ci=categories.findIndex(c=>c.name===e.category);
+              return(<tr key={e.id} className="clickable" onDoubleClick={()=>onDetail(e)}>
+                <td style={{color:'var(--muted)',fontSize:12,whiteSpace:'nowrap'}}>{new Date(e.date).toLocaleDateString('en-MY',{day:'2-digit',month:'short'})}</td>
+                <td style={{fontWeight:500}}>{e.vendor}</td>
+                <td><span className={`badge ${bc(ci<0?8:ci)}`}>{e.category}</span></td>
+                <td style={{color:'var(--muted)',maxWidth:200,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{e.description}</td>
+                <td style={{textAlign:'right'}} className="amount">{fmt(e.amount)}</td>
+              </tr>);
+            })}
           </tbody>
         </table>
       </div>
@@ -626,68 +346,54 @@ function Dashboard({ yearExpenses, total, monthTotal, monthExpenses, topCat, cat
   );
 }
 
-/* ═══════════════════════════ EXPENSES PAGE ═══════════════════════════ */
-function ExpensesPage({ expenses, allExpenses, filterYear, setFilterYear, filterMonth, setFilterMonth, filterCat, setFilterCat, onEdit, onDelete }) {
-  const years = [...new Set(allExpenses.map(e => new Date(e.date).getFullYear()))].sort((a,b) => b-a);
-  const total = expenses.reduce((s,e) => s + e.amount, 0);
-  const sorted = [...expenses].sort((a,b) => new Date(b.date) - new Date(a.date));
-
-  return (
+/* ════════════════════ ALL EXPENSES ════════════════════ */
+function ExpensesPage({expenses,allExp,filterYear,setFilterYear,filterMonth,setFilterMonth,filterCat,setFilterCat,onEdit,onDelete,onDetail,categories}){
+  const years=[...new Set(allExp.map(e=>new Date(e.date).getFullYear()))].sort((a,b)=>b-a);
+  const total=expenses.reduce((s,e)=>s+e.amount,0);
+  const sorted=[...expenses].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  return(
     <div>
       <div className="page-header">
-        <div className="page-title">All Expenses</div>
-        <div className="page-sub">{expenses.length} records · Total {fmt(total)}</div>
+        <div><div className="page-title">All Expenses</div><div className="page-sub">{expenses.length} records · Total {fmt(total)}</div></div>
       </div>
-
       <div className="filter-bar">
-        <select value={filterYear} onChange={e => setFilterYear(e.target.value)}>
+        <select value={filterYear} onChange={e=>setFilterYear(e.target.value)}>
           <option value="">All years</option>
-          {years.map(y => <option key={y} value={y}>{y}</option>)}
+          {years.map(y=><option key={y} value={y}>{y}</option>)}
         </select>
-        <select value={filterMonth} onChange={e => setFilterMonth(e.target.value)}>
+        <select value={filterMonth} onChange={e=>setFilterMonth(e.target.value)}>
           <option value="">All months</option>
-          {['January','February','March','April','May','June','July','August','September','October','November','December']
-            .map((m,i) => <option key={i} value={i+1}>{m}</option>)}
+          {['January','February','March','April','May','June','July','August','September','October','November','December'].map((m,i)=><option key={i} value={i+1}>{m}</option>)}
         </select>
-        <select value={filterCat} onChange={e => setFilterCat(e.target.value)}>
+        <select value={filterCat} onChange={e=>setFilterCat(e.target.value)}>
           <option value="">All categories</option>
-          {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+          {categories.map(c=><option key={c.id} value={c.name}>{c.name}</option>)}
         </select>
-        {(filterYear || filterMonth || filterCat) && (
-          <button className="btn btn-outline btn-sm" onClick={() => { setFilterYear(''); setFilterMonth(''); setFilterCat(''); }}>
-            Clear filters
-          </button>
-        )}
+        {(filterYear||filterMonth||filterCat)&&<button className="btn btn-outline btn-sm" onClick={()=>{setFilterYear('');setFilterMonth('');setFilterCat('');}}>Clear</button>}
       </div>
-
+      <p className="hint" style={{marginBottom:10}}>💡 Double-click any row to view full details and attached invoice/receipt</p>
       <div className="card">
-        {sorted.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon">📋</div>
-            <div>No expenses found</div>
-            <div style={{ fontSize: 12, marginTop: 4 }}>Try adjusting your filters</div>
-          </div>
-        ) : (
+        {sorted.length===0?(
+          <div className="empty-state"><div className="empty-icon">📋</div><div>No expenses found</div><div style={{fontSize:12,marginTop:4}}>Try adjusting your filters</div></div>
+        ):(
           <table>
-            <thead>
-              <tr><th>Date</th><th>Vendor</th><th>Category</th><th>Description</th><th style={{ textAlign: 'right' }}>Amount</th><th></th></tr>
-            </thead>
+            <thead><tr><th>Date</th><th>Vendor</th><th>Category</th><th>Description</th><th style={{textAlign:'right'}}>Amount</th><th>Doc</th><th></th></tr></thead>
             <tbody>
-              {sorted.map(e => (
-                <tr key={e.id}>
-                  <td style={{ color: 'var(--muted)', fontSize: 12, whiteSpace: 'nowrap' }}>
-                    {new Date(e.date).toLocaleDateString('en-MY', { day: '2-digit', month: 'short', year: '2-digit' })}
+              {sorted.map(e=>{
+                const ci=categories.findIndex(c=>c.name===e.category);
+                return(<tr key={e.id} className="clickable" onDoubleClick={()=>onDetail(e)}>
+                  <td style={{color:'var(--muted)',fontSize:12,whiteSpace:'nowrap'}}>{new Date(e.date).toLocaleDateString('en-MY',{day:'2-digit',month:'short',year:'2-digit'})}</td>
+                  <td style={{fontWeight:500}}>{e.vendor}</td>
+                  <td><span className={`badge ${bc(ci<0?8:ci)}`}>{e.category}</span></td>
+                  <td style={{color:'var(--muted)',maxWidth:180,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{e.description}</td>
+                  <td style={{textAlign:'right'}} className="amount">{fmt(e.amount)}</td>
+                  <td style={{textAlign:'center',fontSize:16}}>{e.fileData?'📎':'—'}</td>
+                  <td style={{textAlign:'right',whiteSpace:'nowrap'}}>
+                    <button className="btn btn-outline btn-sm" style={{marginRight:4}} onClick={ev=>{ev.stopPropagation();onEdit(e);}}>Edit</button>
+                    <button className="btn btn-danger btn-sm" onClick={ev=>{ev.stopPropagation();onDelete(e);}}>Delete</button>
                   </td>
-                  <td style={{ fontWeight: 500 }}>{e.vendor}</td>
-                  <td><span className={`badge ${CAT_BADGE[e.category] || 'badge-other'}`}>{e.category}</span></td>
-                  <td style={{ color: 'var(--muted)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.description}</td>
-                  <td style={{ textAlign: 'right' }} className="amount">{fmt(e.amount)}</td>
-                  <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                    <button className="btn btn-outline btn-sm" style={{ marginRight: 4 }} onClick={() => onEdit(e)}>Edit</button>
-                    <button className="btn btn-danger btn-sm" onClick={() => onDelete(e)}>Delete</button>
-                  </td>
-                </tr>
-              ))}
+                </tr>);
+              })}
             </tbody>
           </table>
         )}
@@ -696,341 +402,321 @@ function ExpensesPage({ expenses, allExpenses, filterYear, setFilterYear, filter
   );
 }
 
-/* ═══════════════════════════ UPLOAD PAGE ═══════════════════════════ */
-function UploadPage({ onAdd, apiKey }) {
-  const [stage, setStage] = useState('idle'); // idle | scanning | result | manual | error
-  const [scanResult, setScanResult] = useState(null);
-  const [dragging, setDragging] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
-  const [form, setForm] = useState({
-    date: new Date().toISOString().slice(0,10),
-    vendor: '', amount: '', category: 'Other', description: '',
-  });
-  const fileRef = useRef();
+/* ════════════════════ DETAIL MODAL ════════════════════ */
+function DetailModal({item,categories,onEdit,onDelete,onClose}){
+  const ci=categories.findIndex(c=>c.name===item.category);
+  return(
+    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="modal modal-lg">
+        <div className="modal-header">
+          <div>
+            <span className={`badge ${bc(ci<0?8:ci)}`} style={{marginBottom:8,display:'inline-flex'}}>{item.category}</span>
+            <div className="modal-title" style={{fontSize:18}}>{item.vendor}</div>
+          </div>
+          <button className="btn btn-outline btn-sm" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body">
+          {/* Summary row */}
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12}}>
+            <div className="detail-block">
+              <div className="stat-label">Amount</div>
+              <div style={{fontFamily:'DM Mono,monospace',fontSize:20,fontWeight:600,color:'var(--accent-mid)',marginTop:4}}>{fmt(item.amount)}</div>
+            </div>
+            <div className="detail-block">
+              <div className="stat-label">Date</div>
+              <div style={{fontSize:14,fontWeight:500,marginTop:4}}>{new Date(item.date).toLocaleDateString('en-MY',{day:'2-digit',month:'long',year:'numeric'})}</div>
+            </div>
+            <div className="detail-block">
+              <div className="stat-label">Record ID</div>
+              <div style={{fontFamily:'DM Mono,monospace',fontSize:13,color:'var(--muted)',marginTop:4}}>#{String(item.id).slice(-6)}</div>
+            </div>
+          </div>
 
-  const processFile = async (file) => {
-    if (!file) return;
-    if (!apiKey) {
-      setErrorMsg('Please set your Anthropic API key first (click "🔑 Set API Key" in the top bar).');
-      setStage('error');
-      return;
-    }
-    setStage('scanning');
-    setErrorMsg('');
-    try {
-      const base64 = await new Promise((res, rej) => {
-        const r = new FileReader();
-        r.onload = () => res(r.result.split(',')[1]);
-        r.onerror = rej;
-        r.readAsDataURL(file);
-      });
-      const isImage = file.type.startsWith('image/');
-      const isPDF = file.type === 'application/pdf';
+          {item.description&&(
+            <div>
+              <div className="form-label" style={{marginBottom:6}}>Description</div>
+              <div style={{fontSize:13,padding:'10px 12px',background:'var(--surface2)',borderRadius:'var(--radius-sm)'}}>{item.description}</div>
+            </div>
+          )}
 
-      const promptText = `You are an expense extraction assistant for a Malaysian company. Carefully read this receipt or invoice and extract the following fields.
+          {/* Document */}
+          <div>
+            <div className="form-label" style={{marginBottom:8}}>Attached Document</div>
+            {item.fileData?(
+              <div className="attachment-box">
+                {item.fileType&&item.fileType.startsWith('image/')?(
+                  <img className="attachment-img" src={`data:${item.fileType};base64,${item.fileData}`} alt={item.fileName||'receipt'}/>
+                ):(
+                  <iframe className="attachment-pdf" src={`data:application/pdf;base64,${item.fileData}`} title="invoice"/>
+                )}
+                <div style={{padding:'8px 14px',borderTop:'1px solid var(--border)',fontSize:12,color:'var(--muted)',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                  <span>📎 {item.fileName||'Document'}</span>
+                  <a href={`data:${item.fileType||'application/pdf'};base64,${item.fileData}`} download={item.fileName||'document'} style={{color:'var(--accent-mid)',textDecoration:'none',fontSize:12}}>⬇ Download</a>
+                </div>
+              </div>
+            ):(
+              <div className="attachment-placeholder">No document attached — edit this record to add one</div>
+            )}
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button className="btn btn-danger btn-sm" onClick={onDelete}>Delete</button>
+          <button className="btn btn-outline" onClick={onClose}>Close</button>
+          <button className="btn btn-primary" onClick={onEdit}>✏ Edit</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-Rules:
-- vendor: the supplier/merchant name (who issued the invoice or receipt), NOT the company being billed
+/* ════════════════════ UPLOAD PAGE ════════════════════ */
+function UploadPage({onAdd,apiKey,catNames}){
+  const [stage,   setStage]   = useState('idle');
+  const [result,  setResult]  = useState(null);
+  const [dragging,setDragging]= useState(false);
+  const [errMsg,  setErrMsg]  = useState('');
+  const [captured,setCaptured]= useState(null);
+  const [form,    setForm]    = useState({date:new Date().toISOString().slice(0,10),vendor:'',amount:'',category:catNames[0]||'',description:''});
+  const fileRef=useRef();
+  const sf=(k,v)=>setForm(f=>({...f,[k]:v}));
+
+  const processFile=async file=>{
+    if(!file)return;
+    if(!apiKey){setErrMsg('Please set your Anthropic API key first.');setStage('error');return;}
+    setStage('scanning');setErrMsg('');
+    try{
+      const base64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});
+      setCaptured({base64,name:file.name,type:file.type});
+      const isImg=file.type.startsWith('image/'), isPDF=file.type==='application/pdf';
+      const catList=catNames.join(' | ');
+      const prompt=`You are an expense extraction assistant for Far Capital, a Malaysian company.
+
+Read this receipt or invoice carefully and extract:
+- vendor: the supplier/company at the TOP of the document (the issuer), NOT the "TO:" recipient (Far Capital is always the recipient, never the vendor)
 - date: the invoice or receipt date in YYYY-MM-DD format
-- amount: the final total payable amount in RM (look for "Total Payable", "Total Amount Due", "Grand Total", or the largest total figure)
-- category: pick the most fitting from exactly these options: Travel | Meals & Entertainment | Office Supplies | Software & Subscriptions | Marketing | Utilities | Professional Services | Other
-- description: a concise one-line summary of what was purchased/serviced
+- amount: the final Total Payable / Grand Total as a plain number in RM, no currency symbol
+- category: pick EXACTLY one from this list: ${catList}
+- description: one concise line summarizing what was purchased or serviced
 
-For invoices: the vendor is the company name at the TOP of the invoice (the issuer), not the "TO:" recipient.
-For receipts: the vendor is the shop/restaurant name printed on the receipt.
-
-Respond ONLY with a valid JSON object — no markdown, no extra text, no explanation:
+Respond ONLY with valid JSON, no markdown, no extra text:
 {"vendor":"...","date":"YYYY-MM-DD","amount":0.00,"category":"...","description":"..."}`;
 
-      let userContent;
-      if (isImage) {
-        userContent = [
-          { type: 'image', source: { type: 'base64', media_type: file.type, data: base64 } },
-          { type: 'text', text: promptText },
-        ];
-      } else if (isPDF) {
-        userContent = [
-          { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } },
-          { type: 'text', text: promptText },
-        ];
-      } else {
-        userContent = [{ type: 'text', text: promptText + '\n\nNote: No file was provided.' }];
-      }
+      let content;
+      if(isImg)      content=[{type:'image',source:{type:'base64',media_type:file.type,data:base64}},{type:'text',text:prompt}];
+      else if(isPDF) content=[{type:'document',source:{type:'base64',media_type:'application/pdf',data:base64}},{type:'text',text:prompt}];
+      else           content=[{type:'text',text:prompt}];
 
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 500,
-          messages: [{ role: 'user', content: userContent }],
-        }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err?.error?.message || `API error ${res.status}`);
-      }
-
-      const data = await res.json();
-      const text = data.content?.find(b => b.type === 'text')?.text || '';
-      const clean = text.replace(/```json|```/g, '').trim();
-      const parsed = JSON.parse(clean);
-
-      setScanResult(parsed);
-      setForm({
-        date: parsed.date || new Date().toISOString().slice(0,10),
-        vendor: parsed.vendor || '',
-        amount: parsed.amount?.toString() || '',
-        category: CATEGORIES.includes(parsed.category) ? parsed.category : 'Other',
-        description: parsed.description || '',
-      });
+      const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,messages:[{role:'user',content}]})});
+      if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e?.error?.message||'API error '+res.status);}
+      const data=await res.json();
+      const text=data.content?.find(b=>b.type==='text')?.text||'';
+      const parsed=JSON.parse(text.replace(/```json|```/g,'').trim());
+      setResult(parsed);
+      setForm({date:parsed.date||new Date().toISOString().slice(0,10),vendor:parsed.vendor||'',amount:parsed.amount?.toString()||'',category:catNames.includes(parsed.category)?parsed.category:catNames[0]||'',description:parsed.description||''});
       setStage('result');
-    } catch (err) {
-      setErrorMsg('Could not extract data: ' + err.message + '. Please fill in manually.');
-      setStage('manual');
-    }
+    }catch(e){setErrMsg('Could not extract: '+e.message+'. Fill in manually below.');setStage('manual');}
   };
 
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) processFile(file);
+  const handleDrop=e=>{e.preventDefault();setDragging(false);const f=e.dataTransfer.files[0];if(f)processFile(f);};
+
+  const handleSave=()=>{
+    if(!form.vendor||!form.amount||!form.date)return;
+    onAdd({date:form.date,vendor:form.vendor,amount:parseFloat(form.amount),category:form.category,description:form.description,fileData:captured?.base64||null,fileName:captured?.name||null,fileType:captured?.type||null});
+    setStage('saved');setResult(null);setCaptured(null);
+    setForm({date:new Date().toISOString().slice(0,10),vendor:'',amount:'',category:catNames[0]||'',description:''});
   };
 
-  const handleSave = () => {
-    if (!form.vendor || !form.amount || !form.date) return;
-    onAdd({ date: form.date, vendor: form.vendor, amount: parseFloat(form.amount), category: form.category, description: form.description });
-    setStage('saved');
-    setScanResult(null);
-    setForm({ date: new Date().toISOString().slice(0,10), vendor: '', amount: '', category: 'Other', description: '' });
-  };
-
-  const setF = (key, val) => setForm(f => ({ ...f, [key]: val }));
-
-  return (
-    <div style={{ maxWidth: 560 }}>
-      <div className="page-header">
+  return(
+    <div style={{maxWidth:580}}>
+      <div className="page-header" style={{display:'block'}}>
         <div className="page-title">Scan Receipt / Invoice</div>
-        <div className="page-sub">Upload a photo or PDF — AI will extract and categorize the expense automatically</div>
+        <div className="page-sub">Upload a photo or PDF — AI extracts and categorizes automatically</div>
       </div>
+      {!apiKey&&<div style={{background:'var(--amber-light)',border:'1px solid rgba(184,117,10,0.25)',borderRadius:'var(--radius)',padding:'12px 16px',marginBottom:16,fontSize:13,color:'var(--amber)'}}>⚠ Set your API key (🔑 top bar) to enable AI scanning. You can still add expenses manually.</div>}
 
-      {!apiKey && (
-        <div style={{ background: 'var(--amber-light)', border: '1px solid rgba(184,117,10,0.25)', borderRadius: 'var(--radius)', padding: '12px 16px', marginBottom: 16, fontSize: 13, color: 'var(--amber)' }}>
-          ⚠ Set your Anthropic API key (top bar → 🔑 Set API Key) to enable AI scanning. You can still add expenses manually.
-        </div>
-      )}
-
-      {/* Idle — upload zone */}
-      {stage === 'idle' && (
-        <div className="card">
-          <div className="card-body">
-            <div
-              className={`upload-zone ${dragging ? 'dragging' : ''}`}
-              onClick={() => fileRef.current.click()}
-              onDragOver={e => { e.preventDefault(); setDragging(true); }}
-              onDragLeave={() => setDragging(false)}
-              onDrop={handleDrop}
-            >
-              <div className="upload-icon">📄</div>
-              <div className="upload-text"><strong>Click to upload</strong> or drag & drop</div>
-              <div className="upload-text" style={{ fontSize: 12, marginTop: 4 }}>JPG, PNG, PDF supported</div>
-            </div>
-            <input ref={fileRef} type="file" accept="image/*,.pdf" style={{ display: 'none' }} onChange={e => processFile(e.target.files[0])} />
-            <div style={{ textAlign: 'center', margin: '14px 0', color: 'var(--muted)', fontSize: 12 }}>— or —</div>
-            <button className="btn btn-outline" style={{ width: '100%' }} onClick={() => setStage('manual')}>
-              Enter manually
-            </button>
+      {stage==='idle'&&(
+        <div className="card"><div className="card-body">
+          <div className={`upload-zone ${dragging?'dragging':''}`} onClick={()=>fileRef.current.click()} onDragOver={e=>{e.preventDefault();setDragging(true);}} onDragLeave={()=>setDragging(false)} onDrop={handleDrop}>
+            <div className="upload-icon">📄</div>
+            <div className="upload-text"><strong>Click to upload</strong> or drag & drop</div>
+            <div className="upload-text" style={{fontSize:12,marginTop:4}}>JPG, PNG, PDF — receipt or invoice</div>
           </div>
-        </div>
+          <input ref={fileRef} type="file" accept="image/*,.pdf" style={{display:'none'}} onChange={e=>processFile(e.target.files[0])}/>
+          <div style={{textAlign:'center',margin:'14px 0',color:'var(--muted)',fontSize:12}}>— or —</div>
+          <button className="btn btn-outline" style={{width:'100%'}} onClick={()=>setStage('manual')}>Enter manually</button>
+        </div></div>
       )}
 
-      {/* Scanning */}
-      {stage === 'scanning' && (
-        <div className="card">
-          <div className="card-body scanning-state">
-            <div className="scan-spinner"></div>
-            <div style={{ fontWeight: 500, marginBottom: 4 }}>Scanning document...</div>
-            <div style={{ fontSize: 12, color: 'var(--muted)' }}>AI is reading vendor, amount and category</div>
-          </div>
-        </div>
+      {stage==='scanning'&&(
+        <div className="card"><div className="card-body scanning-state">
+          <div className="scan-spinner"></div>
+          <div style={{fontWeight:500,marginBottom:4}}>Scanning document...</div>
+          <div style={{fontSize:12,color:'var(--muted)'}}>AI is reading vendor, amount and category</div>
+        </div></div>
       )}
 
-      {/* Result or Manual */}
-      {(stage === 'result' || stage === 'manual') && (
+      {(stage==='result'||stage==='manual')&&(
         <div className="card">
           <div className="card-header">
-            <div>
-              {stage === 'result' && <div className="scan-badge">✓ AI extracted</div>}
-              <span className="card-title">{stage === 'result' ? 'Review & confirm details' : 'Enter expense details'}</span>
-            </div>
-            <button className="btn btn-outline btn-sm" onClick={() => { setStage('idle'); setScanResult(null); }}>Cancel</button>
+            <div>{stage==='result'&&<div className="scan-badge">✓ AI extracted</div>}<span className="card-title">{stage==='result'?'Review & confirm':'Enter expense details'}</span></div>
+            <button className="btn btn-outline btn-sm" onClick={()=>{setStage('idle');setResult(null);setCaptured(null);}}>Cancel</button>
           </div>
           <div className="card-body">
-            {stage === 'result' && scanResult && (
-              <div className="scan-result-preview" style={{ marginBottom: 14 }}>
-                Identified: <strong>{scanResult.vendor}</strong> · <strong>{fmt(scanResult.amount)}</strong> · <strong>{scanResult.category}</strong>
+            {stage==='result'&&result&&<div className="scan-result-preview" style={{marginBottom:14}}>Identified: <strong>{result.vendor}</strong> · <strong>{fmt(result.amount)}</strong> · <strong>{result.category}</strong></div>}
+            {errMsg&&<div style={{background:'var(--danger-light)',border:'1px solid rgba(192,57,43,0.15)',borderRadius:'var(--radius-sm)',padding:'10px 12px',fontSize:12,color:'var(--danger)',marginBottom:14}}>{errMsg}</div>}
+
+            {captured&&(
+              <div>
+                <div className="form-label" style={{marginBottom:6}}>Attached document</div>
+                <div className="attachment-box">
+                  {captured.type.startsWith('image/')?(<img className="attachment-img" src={`data:${captured.type};base64,${captured.base64}`} alt="receipt" style={{maxHeight:160}}/>):(<div className="attachment-placeholder">📎 {captured.name} (PDF — will be saved with record)</div>)}
+                </div>
               </div>
             )}
-            {errorMsg && (
-              <div style={{ background: 'var(--danger-light)', border: '1px solid rgba(192,57,43,0.15)', borderRadius: 'var(--radius-sm)', padding: '10px 12px', fontSize: 12, color: 'var(--danger)', marginBottom: 14 }}>
-                {errorMsg}
-              </div>
-            )}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+            <div style={{display:'flex',flexDirection:'column',gap:12}}>
               <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">Date *</label>
-                  <input type="date" value={form.date} onChange={e => setF('date', e.target.value)} />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Amount (RM) *</label>
-                  <input type="number" placeholder="0.00" step="0.01" min="0" value={form.amount} onChange={e => setF('amount', e.target.value)} />
-                </div>
+                <div className="form-group"><label className="form-label">Date *</label><input type="date" value={form.date} onChange={e=>sf('date',e.target.value)}/></div>
+                <div className="form-group"><label className="form-label">Amount (RM) *</label><input type="number" placeholder="0.00" step="0.01" min="0" value={form.amount} onChange={e=>sf('amount',e.target.value)}/></div>
               </div>
-              <div className="form-group">
-                <label className="form-label">Vendor / Merchant *</label>
-                <input type="text" placeholder="e.g. Grab, Petronas, Microsoft" value={form.vendor} onChange={e => setF('vendor', e.target.value)} />
+              <div className="form-group"><label className="form-label">Vendor / Merchant *</label><input type="text" placeholder="e.g. Grab, Petronas" value={form.vendor} onChange={e=>sf('vendor',e.target.value)}/></div>
+              <div className="form-group"><label className="form-label">Category</label>
+                <select value={form.category} onChange={e=>sf('category',e.target.value)}>{catNames.map(c=><option key={c} value={c}>{c}</option>)}</select>
               </div>
-              <div className="form-group">
-                <label className="form-label">Category</label>
-                <select value={form.category} onChange={e => setF('category', e.target.value)}>
-                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Description</label>
-                <input type="text" placeholder="Brief note about this expense" value={form.description} onChange={e => setF('description', e.target.value)} />
-              </div>
+              <div className="form-group"><label className="form-label">Description</label><input type="text" placeholder="Brief note" value={form.description} onChange={e=>sf('description',e.target.value)}/></div>
             </div>
           </div>
-          <div style={{ padding: '14px 16px', borderTop: '1px solid var(--border)', display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-            <button className="btn btn-outline" onClick={() => setStage('idle')}>Back</button>
-            <button
-              className="btn btn-primary"
-              onClick={handleSave}
-              disabled={!form.vendor || !form.amount || !form.date}
-            >
-              Save Expense
-            </button>
+          <div style={{padding:'14px 16px',borderTop:'1px solid var(--border)',display:'flex',gap:8,justifyContent:'flex-end'}}>
+            <button className="btn btn-outline" onClick={()=>setStage('idle')}>Back</button>
+            <button className="btn btn-primary" onClick={handleSave} disabled={!form.vendor||!form.amount||!form.date}>Save Expense</button>
           </div>
         </div>
       )}
 
-      {/* Error */}
-      {stage === 'error' && (
-        <div className="card">
-          <div className="card-body">
-            <div className="delete-confirm" style={{ marginBottom: 14 }}>{errorMsg}</div>
-            <button className="btn btn-outline" onClick={() => setStage('idle')}>Go back</button>
-          </div>
-        </div>
-      )}
+      {stage==='error'&&<div className="card"><div className="card-body"><div className="delete-confirm" style={{marginBottom:14}}>{errMsg}</div><button className="btn btn-outline" onClick={()=>setStage('idle')}>Go back</button></div></div>}
 
-      {stage === 'saved' && (
-        <div className="card">
-          <div className="card-body" style={{ textAlign: 'center', padding: '36px 20px' }}>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>✅</div>
-            <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 4 }}>Expense saved!</div>
-            <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20 }}>Redirecting you to All Expenses...</div>
-            <button className="btn btn-primary" onClick={() => setStage('idle')}>Scan another</button>
-          </div>
-        </div>
+      {stage==='saved'&&(
+        <div className="card"><div className="card-body" style={{textAlign:'center',padding:'36px 20px'}}>
+          <div style={{fontSize:36,marginBottom:12}}>✅</div>
+          <div style={{fontWeight:600,fontSize:16,marginBottom:4}}>Expense saved!</div>
+          <div style={{fontSize:13,color:'var(--muted)',marginBottom:20}}>You have been redirected to All Expenses.</div>
+          <button className="btn btn-primary" onClick={()=>setStage('idle')}>Scan another</button>
+        </div></div>
       )}
     </div>
   );
 }
 
-/* ═══════════════════════════ MODALS ═══════════════════════════ */
-function ExpenseModal({ title, item, onSave, onClose }) {
-  const [form, setForm] = useState(
-    item
-      ? { ...item, amount: item.amount.toString() }
-      : { date: new Date().toISOString().slice(0,10), vendor: '', amount: '', category: 'Other', description: '' }
-  );
-  const setF = (k, v) => setForm(f => ({ ...f, [k]: v }));
-  const valid = form.vendor.trim() && form.amount && form.date;
-
-  return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+/* ════════════════════ EXPENSE MODAL ════════════════════ */
+function ExpenseModal({title,item,catNames,onSave,onClose}){
+  const [form,setForm]=useState(item?{...item,amount:item.amount.toString()}:{date:new Date().toISOString().slice(0,10),vendor:'',amount:'',category:catNames[0]||'',description:'',fileData:null,fileName:null,fileType:null});
+  const sf=(k,v)=>setForm(f=>({...f,[k]:v}));
+  const valid=form.vendor.trim()&&form.amount&&form.date;
+  const handleFile=async file=>{
+    if(!file)return;
+    const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});
+    setForm(f=>({...f,fileData:b64,fileName:file.name,fileType:file.type}));
+  };
+  return(
+    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="modal">
-        <div className="modal-header">
-          <span className="modal-title">{title}</span>
-          <button className="btn btn-outline btn-sm" onClick={onClose}>✕</button>
-        </div>
+        <div className="modal-header"><span className="modal-title">{title}</span><button className="btn btn-outline btn-sm" onClick={onClose}>✕</button></div>
         <div className="modal-body">
           <div className="form-row">
-            <div className="form-group">
-              <label className="form-label">Date *</label>
-              <input type="date" value={form.date} onChange={e => setF('date', e.target.value)} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Amount (RM) *</label>
-              <input type="number" placeholder="0.00" step="0.01" min="0" value={form.amount} onChange={e => setF('amount', e.target.value)} />
-            </div>
+            <div className="form-group"><label className="form-label">Date *</label><input type="date" value={form.date} onChange={e=>sf('date',e.target.value)}/></div>
+            <div className="form-group"><label className="form-label">Amount (RM) *</label><input type="number" placeholder="0.00" step="0.01" min="0" value={form.amount} onChange={e=>sf('amount',e.target.value)}/></div>
           </div>
-          <div className="form-group">
-            <label className="form-label">Vendor / Merchant *</label>
-            <input type="text" placeholder="e.g. Grab, Petronas" value={form.vendor} onChange={e => setF('vendor', e.target.value)} />
+          <div className="form-group"><label className="form-label">Vendor / Merchant *</label><input type="text" value={form.vendor} onChange={e=>sf('vendor',e.target.value)}/></div>
+          <div className="form-group"><label className="form-label">Category</label>
+            <select value={form.category} onChange={e=>sf('category',e.target.value)}>{catNames.map(c=><option key={c} value={c}>{c}</option>)}</select>
           </div>
+          <div className="form-group"><label className="form-label">Description</label><input type="text" placeholder="Brief note" value={form.description} onChange={e=>sf('description',e.target.value)}/></div>
           <div className="form-group">
-            <label className="form-label">Category</label>
-            <select value={form.category} onChange={e => setF('category', e.target.value)}>
-              {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-          <div className="form-group">
-            <label className="form-label">Description</label>
-            <input type="text" placeholder="Brief note" value={form.description} onChange={e => setF('description', e.target.value)} />
+            <label className="form-label">Attach document (optional)</label>
+            <input type="file" accept="image/*,.pdf" onChange={e=>handleFile(e.target.files[0])} style={{fontSize:12}}/>
+            {form.fileData&&<div style={{fontSize:12,color:'var(--accent-mid)',marginTop:4}}>📎 {form.fileName}</div>}
           </div>
         </div>
         <div className="modal-footer">
           <button className="btn btn-outline" onClick={onClose}>Cancel</button>
-          <button
-            className="btn btn-primary"
-            disabled={!valid}
-            onClick={() => onSave({ ...form, amount: parseFloat(form.amount) })}
-          >
-            Save
-          </button>
+          <button className="btn btn-primary" disabled={!valid} onClick={()=>onSave({...form,amount:parseFloat(form.amount)})}>Save</button>
         </div>
       </div>
     </div>
   );
 }
 
-function DeleteModal({ item, onConfirm, onClose }) {
-  return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal" style={{ maxWidth: 400 }}>
-        <div className="modal-header">
-          <span className="modal-title">Delete expense</span>
-          <button className="btn btn-outline btn-sm" onClick={onClose}>✕</button>
-        </div>
+/* ════════════════════ DELETE MODAL ════════════════════ */
+function DeleteModal({item,onConfirm,onClose}){
+  return(
+    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="modal" style={{maxWidth:400}}>
+        <div className="modal-header"><span className="modal-title">Delete expense</span><button className="btn btn-outline btn-sm" onClick={onClose}>✕</button></div>
+        <div className="modal-body"><div className="delete-confirm">Permanently delete <strong>{item.vendor}</strong> ({fmt(item.amount)}) dated {new Date(item.date).toLocaleDateString('en-MY',{day:'2-digit',month:'short',year:'numeric'})}? This cannot be undone.</div></div>
+        <div className="modal-footer"><button className="btn btn-outline" onClick={onClose}>Cancel</button><button className="btn btn-danger" onClick={onConfirm}>Delete</button></div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════ CATEGORY MANAGER ════════════════════ */
+function CategoryManager({categories,setCategories,onClose}){
+  const [local,  setLocal]  = useState(categories.map(c=>({...c})));
+  const [newName,setNewName]= useState('');
+  const [editing,setEditing]= useState(null);
+
+  const addCat=()=>{
+    const t=newName.trim();
+    if(!t||local.find(c=>c.name===t))return;
+    setLocal(p=>[...p,{id:'cat-'+Date.now(),name:t}]);
+    setNewName('');
+  };
+  const removeCat=id=>setLocal(p=>p.filter(c=>c.id!==id));
+  const renameSave=()=>{
+    if(!editing||!editing.name.trim())return;
+    setLocal(p=>p.map(c=>c.id===editing.id?{...c,name:editing.name.trim()}:c));
+    setEditing(null);
+  };
+
+  return(
+    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="modal">
+        <div className="modal-header"><span className="modal-title">Manage Categories</span><button className="btn btn-outline btn-sm" onClick={onClose}>✕</button></div>
         <div className="modal-body">
-          <div className="delete-confirm">
-            You are about to permanently delete <strong>{item.vendor}</strong> ({fmt(item.amount)}) dated{' '}
-            {new Date(item.date).toLocaleDateString('en-MY', { day: '2-digit', month: 'short', year: 'numeric' })}.
-            This cannot be undone.
+          <p style={{fontSize:12,color:'var(--muted)'}}>Click a name or "Rename" to edit. Changes apply to new records; existing records keep their original category label.</p>
+          <div className="cat-list">
+            {local.map((c,i)=>(
+              <div key={c.id} className="cat-item">
+                <span className="cat-swatch" style={{background:CHART_COLORS[i%CHART_COLORS.length]}}></span>
+                {editing&&editing.id===c.id?(
+                  <input style={{flex:1,fontSize:13,padding:'2px 6px'}} value={editing.name} onChange={e=>setEditing(v=>({...v,name:e.target.value}))} onKeyDown={e=>{if(e.key==='Enter')renameSave();if(e.key==='Escape')setEditing(null);}} autoFocus/>
+                ):(
+                  <span className="cat-name" style={{cursor:'text'}} onClick={()=>setEditing({id:c.id,name:c.name})}>{c.name}</span>
+                )}
+                {editing&&editing.id===c.id?(
+                  <button className="btn btn-primary btn-sm" onClick={renameSave}>✓</button>
+                ):(
+                  <button className="btn btn-outline btn-sm" onClick={()=>setEditing({id:c.id,name:c.name})}>Rename</button>
+                )}
+                <button className="btn btn-danger btn-sm" onClick={()=>removeCat(c.id)}>✕</button>
+              </div>
+            ))}
+          </div>
+          <div className="cat-add-row">
+            <input type="text" placeholder="New category name..." value={newName} onChange={e=>setNewName(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addCat()}/>
+            <button className="btn btn-primary btn-sm" onClick={addCat} disabled={!newName.trim()}>+ Add</button>
           </div>
         </div>
         <div className="modal-footer">
           <button className="btn btn-outline" onClick={onClose}>Cancel</button>
-          <button className="btn btn-danger" onClick={onConfirm}>Delete</button>
+          <button className="btn btn-primary" onClick={()=>{setCategories(local);onClose();}}>Save changes</button>
         </div>
       </div>
     </div>
   );
 }
 
-/* ═══════════════════════════ MOUNT ═══════════════════════════ */
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>
 </body>
 </html>
