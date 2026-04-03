@@ -208,7 +208,7 @@ function App(){
     return true;
   });
 
-  const nav=[{id:'dashboard',icon:'▦',label:'Dashboard'},{id:'expenses',icon:'≡',label:'All Expenses'},{id:'upload',icon:'⬆',label:'Scan Receipt'}];
+  const nav=[{id:'dashboard',icon:'▦',label:'Dashboard'},{id:'expenses',icon:'≡',label:'All Expenses'},{id:'upload',icon:'⬆',label:'Scan Receipt'},{id:'settings',icon:'⚙',label:'Settings'}];
 
   return(
     <div className="app">
@@ -244,17 +244,14 @@ function App(){
               <span className="nav-icon">{n.icon}</span>{n.label}
             </button>
           ))}
-          <div className="nav-divider" style={{marginTop:'auto'}}></div>
-          <button className="nav-item" onClick={()=>setShowCatMgr(true)}>
-            <span className="nav-icon">⚙</span>Categories
-          </button>
         </nav>
 
         {/* ── Content ── */}
         <div className="content">
-          {page==='dashboard'&&<Dashboard yExp={yExp} total={total} mTotal={mTotal} mExp={mExp} topCat={topCat} catTot={catTot} mTotals={mTotals} viewYear={viewYear} setViewYear={setViewYear} allYears={allYears} categories={categories} onDetail={setDetailItem}/>}
+          {page==='dashboard'&&<Dashboard expenses={expenses} allYears={allYears} categories={categories} onDetail={setDetailItem}/>}
           {page==='expenses' &&<ExpensesPage expenses={filtered} allExp={expenses} filterYear={filterYear} setFilterYear={setFilterYear} filterMonth={filterMonth} setFilterMonth={setFilterMonth} filterCat={filterCat} setFilterCat={setFilterCat} onEdit={setEditItem} onDelete={setDeleteItem} onDetail={setDetailItem} categories={categories}/>}
           {page==='upload'   &&<UploadPage onAdd={d=>addExpense(d,true)} apiKey={apiKey} catNames={catNames}/>}
+          {page==='settings' &&<SettingsPage categories={categories} setCategories={setCategories} expenses={expenses} setExpenses={setExpenses} apiKey={apiKey} setApiKey={k=>{setApiKey(k);localStorage.setItem(AKEY,k);}}/>}
         </div>
       </div>
 
@@ -262,59 +259,109 @@ function App(){
       {editItem   &&<ExpenseModal title="Edit Expense" catNames={catNames} item={editItem} onSave={updExpense} onClose={()=>setEditItem(null)}/>}
       {deleteItem &&<DeleteModal  item={deleteItem} onConfirm={()=>delExpense(deleteItem.id)} onClose={()=>setDeleteItem(null)}/>}
       {detailItem &&<DetailModal  item={detailItem} categories={categories} onEdit={()=>{setEditItem(detailItem);setDetailItem(null);}} onDelete={()=>{setDeleteItem(detailItem);setDetailItem(null);}} onClose={()=>setDetailItem(null)}/>}
-      {showCatMgr &&<CategoryManager categories={categories} setCategories={setCategories} expenses={expenses} setExpenses={setExpenses} onClose={()=>setShowCatMgr(false)}/>}
     </div>
   );
 }
 
 /* ════════════════════ DASHBOARD ════════════════════ */
-function Dashboard({yExp,total,mTotal,mExp,topCat,catTot,mTotals,viewYear,setViewYear,allYears,categories,onDetail}){
-  const barRef=useRef(), donutRef=useRef(), barC=useRef(), donutC=useRef();
+function Dashboard({expenses,allYears,categories,onDetail}){
   const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const now=new Date();
+  // compare mode: show two years side by side
+  const [yearA, setYearA]=useState(allYears.includes(now.getFullYear()-1)?now.getFullYear()-1:allYears[allYears.length-1]||now.getFullYear());
+  const [yearB, setYearB]=useState(now.getFullYear());
+
+  const expA=expenses.filter(e=>new Date(e.date).getFullYear()===yearA);
+  const expB=expenses.filter(e=>new Date(e.date).getFullYear()===yearB);
+  const totalA=expA.reduce((s,e)=>s+e.amount,0);
+  const totalB=expB.reduce((s,e)=>s+e.amount,0);
+  const mTotA=Array(12).fill(0); expA.forEach(e=>{mTotA[new Date(e.date).getMonth()]+=e.amount;});
+  const mTotB=Array(12).fill(0); expB.forEach(e=>{mTotB[new Date(e.date).getMonth()]+=e.amount;});
+
+  const mExp=expenses.filter(e=>{const d=new Date(e.date);return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();});
+  const mTotal=mExp.reduce((s,e)=>s+e.amount,0);
+
+  const catTotB={};
+  expB.forEach(e=>{catTotB[e.category]=(catTotB[e.category]||0)+e.amount;});
+  const topCat=Object.entries(catTotB).sort((a,b)=>b[1]-a[1])[0];
+  const sortedCats=Object.entries(catTotB).sort((a,b)=>b[1]-a[1]);
+  const maxC=sortedCats[0]?.[1]||1;
+
+  // recent = latest 8 across both years combined
+  const recent=[...expenses].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,8);
+
+  const barRef=useRef(), donutRef=useRef(), barC=useRef(), donutC=useRef();
 
   useEffect(()=>{
     if(!barRef.current)return;
     if(barC.current)barC.current.destroy();
-    barC.current=new Chart(barRef.current,{type:'bar',data:{labels:MONTHS,datasets:[{label:'RM',data:mTotals,backgroundColor:'#2d6b47',borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:11},color:'#6b6b65'}},y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:11},color:'#6b6b65',callback:v=>v>=1000?'RM '+(v/1000).toFixed(0)+'k':'RM '+v}}}}});
+    barC.current=new Chart(barRef.current,{
+      type:'bar',
+      data:{labels:MONTHS,datasets:[
+        {label:String(yearA),data:mTotA,backgroundColor:'rgba(45,107,71,0.35)',borderRadius:3,borderSkipped:false},
+        {label:String(yearB),data:mTotB,backgroundColor:'#2d6b47',borderRadius:3,borderSkipped:false},
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{boxWidth:10,font:{size:11},color:'#6b6b65'}}},scales:{x:{grid:{display:false},ticks:{font:{size:11},color:'#6b6b65'}},y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:11},color:'#6b6b65',callback:v=>v>=1000?'RM '+(v/1000).toFixed(0)+'k':'RM '+v}}}}
+    });
     return()=>{if(barC.current)barC.current.destroy();};
-  },[mTotals]);
+  },[mTotA,mTotB,yearA,yearB]);
 
   useEffect(()=>{
     if(!donutRef.current)return;
     if(donutC.current)donutC.current.destroy();
-    const cats=Object.keys(catTot); if(!cats.length)return;
-    donutC.current=new Chart(donutRef.current,{type:'doughnut',data:{labels:cats,datasets:[{data:cats.map(c=>catTot[c]),backgroundColor:CHART_COLORS.slice(0,cats.length),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false}}}});
+    const cats=Object.keys(catTotB); if(!cats.length)return;
+    donutC.current=new Chart(donutRef.current,{type:'doughnut',data:{labels:cats,datasets:[{data:cats.map(c=>catTotB[c]),backgroundColor:CHART_COLORS.slice(0,cats.length),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false}}}});
     return()=>{if(donutC.current)donutC.current.destroy();};
-  },[catTot]);
+  },[catTotB]);
 
-  const sorted=Object.entries(catTot).sort((a,b)=>b[1]-a[1]);
-  const maxC=sorted[0]?.[1]||1;
+  const pctChange=totalA>0?((totalB-totalA)/totalA*100).toFixed(1):null;
 
   return(
     <div>
       <div className="page-header">
         <div><div className="page-title">Overview</div><div className="page-sub">Financial snapshot for Far Capital</div></div>
-        <div className="year-selector"><span style={{fontSize:12,color:'var(--muted)'}}>Year</span>
-          <select value={viewYear} onChange={e=>setViewYear(Number(e.target.value))}>{allYears.map(y=><option key={y} value={y}>{y}</option>)}</select>
+        <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+          <span style={{fontSize:12,color:'var(--muted)'}}>Compare</span>
+          <select value={yearA} onChange={e=>setYearA(Number(e.target.value))}>{allYears.map(y=><option key={y} value={y}>{y}</option>)}</select>
+          <span style={{fontSize:12,color:'var(--muted)'}}>vs</span>
+          <select value={yearB} onChange={e=>setYearB(Number(e.target.value))}>{allYears.map(y=><option key={y} value={y}>{y}</option>)}</select>
         </div>
       </div>
-      <div className="stats-grid">
-        <div className="stat-card"><div className="stat-label">Annual Total ({viewYear})</div><div className="stat-value">{fmt(total)}</div><div className="stat-sub">{yExp.length} transactions</div></div>
-        <div className="stat-card stat-amber"><div className="stat-label">This Month</div><div className="stat-value">{fmt(mTotal)}</div><div className="stat-sub">{mExp.length} transactions</div></div>
-        <div className="stat-card stat-green"><div className="stat-label">Monthly Average</div><div className="stat-value">{fmt(total/12)}</div><div className="stat-sub">Full year basis</div></div>
-        <div className="stat-card"><div className="stat-label">Top Category</div><div className="stat-value" style={{fontSize:14,marginTop:4}}>{topCat?topCat[0]:'—'}</div><div className="stat-sub">{topCat?fmt(topCat[1]):'—'}</div></div>
+
+      {/* Year comparison stat cards */}
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
+        <div className="stat-card">
+          <div className="stat-label">Total {yearA}</div>
+          <div className="stat-value" style={{color:'var(--muted)'}}>{fmt(totalA)}</div>
+          <div className="stat-sub">{expA.length} transactions</div>
+        </div>
+        <div className="stat-card stat-green">
+          <div className="stat-label">Total {yearB}</div>
+          <div className="stat-value">{fmt(totalB)}</div>
+          <div style={{display:'flex',alignItems:'center',gap:6,marginTop:4}}>
+            <span className="stat-sub">{expB.length} transactions</span>
+            {pctChange!==null&&<span style={{fontSize:11,fontWeight:500,color:Number(pctChange)>0?'var(--danger)':'var(--accent-mid)',background:Number(pctChange)>0?'var(--danger-light)':'var(--accent-light)',padding:'1px 6px',borderRadius:20}}>{Number(pctChange)>0?'↑':'↓'}{Math.abs(pctChange)}% vs {yearA}</span>}
+          </div>
+        </div>
       </div>
+      <div className="stats-grid" style={{marginBottom:24}}>
+        <div className="stat-card stat-amber"><div className="stat-label">This Month</div><div className="stat-value">{fmt(mTotal)}</div><div className="stat-sub">{mExp.length} transactions</div></div>
+        <div className="stat-card"><div className="stat-label">Monthly Avg ({yearB})</div><div className="stat-value">{fmt(totalB/12)}</div><div className="stat-sub">Full year basis</div></div>
+        <div className="stat-card"><div className="stat-label">Top Category ({yearB})</div><div className="stat-value" style={{fontSize:13,marginTop:4,lineHeight:1.3}}>{topCat?topCat[0]:'—'}</div><div className="stat-sub">{topCat?fmt(topCat[1]):'—'}</div></div>
+        <div className="stat-card"><div className="stat-label">YoY Difference</div><div className="stat-value" style={{fontSize:18,color:totalB>totalA?'var(--danger)':'var(--accent-mid)'}}>{totalA>0?(totalB>totalA?'+':'')+fmt(totalB-totalA):'—'}</div><div className="stat-sub">{yearA} → {yearB}</div></div>
+      </div>
+
       <div className="charts-row">
         <div className="card">
-          <div className="card-header"><span className="card-title">Monthly spend — {viewYear}</span></div>
-          <div className="card-body"><div style={{position:'relative',height:210}}><canvas ref={barRef}></canvas></div></div>
+          <div className="card-header"><span className="card-title">Monthly spend — {yearA} vs {yearB}</span></div>
+          <div className="card-body"><div style={{position:'relative',height:220}}><canvas ref={barRef}></canvas></div></div>
         </div>
         <div className="card">
-          <div className="card-header"><span className="card-title">By category</span></div>
+          <div className="card-header"><span className="card-title">By category — {yearB}</span></div>
           <div className="card-body">
             <div style={{position:'relative',height:140,marginBottom:16}}><canvas ref={donutRef}></canvas></div>
             <div style={{display:'flex',flexDirection:'column',gap:7}}>
-              {sorted.slice(0,5).map(([cat,amt])=>(
+              {sortedCats.slice(0,5).map(([cat,amt])=>(
                 <div key={cat}>
                   <div style={{display:'flex',justifyContent:'space-between',fontSize:11,marginBottom:3}}><span style={{color:'var(--muted)'}}>{cat}</span><span style={{fontFamily:'DM Mono,monospace',fontSize:11}}>{fmt(amt)}</span></div>
                   <div className="progress-bar"><div className="progress-fill" style={{width:(amt/maxC*100)+'%'}}></div></div>
@@ -324,15 +371,16 @@ function Dashboard({yExp,total,mTotal,mExp,topCat,catTot,mTotals,viewYear,setVie
           </div>
         </div>
       </div>
+
       <div className="card">
         <div className="card-header"><span className="card-title">Recent transactions</span><span className="hint">Double-click a row to view details</span></div>
         <table>
           <thead><tr><th>Date</th><th>Vendor</th><th>Category</th><th>Description</th><th style={{textAlign:'right'}}>Amount</th></tr></thead>
           <tbody>
-            {yExp.slice(-8).reverse().map(e=>{
+            {recent.map(e=>{
               const ci=categories.findIndex(c=>c.name===e.category);
               return(<tr key={e.id} className="clickable" onDoubleClick={()=>onDetail(e)}>
-                <td style={{color:'var(--muted)',fontSize:12,whiteSpace:'nowrap'}}>{new Date(e.date).toLocaleDateString('en-MY',{day:'2-digit',month:'short'})}</td>
+                <td style={{color:'var(--muted)',fontSize:12,whiteSpace:'nowrap'}}>{new Date(e.date).toLocaleDateString('en-MY',{day:'2-digit',month:'short',year:'2-digit'})}</td>
                 <td style={{fontWeight:500}}>{e.vendor}</td>
                 <td><span className={`badge ${bc(ci<0?8:ci)}`}>{e.category}</span></td>
                 <td style={{color:'var(--muted)',maxWidth:200,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{e.description}</td>
@@ -449,9 +497,32 @@ function DetailModal({item,categories,onEdit,onDelete,onClose}){
                 ):(
                   <iframe className="attachment-pdf" src={`data:application/pdf;base64,${item.fileData}`} title="invoice"/>
                 )}
-                <div style={{padding:'8px 14px',borderTop:'1px solid var(--border)',fontSize:12,color:'var(--muted)',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                  <span>📎 {item.fileName||'Document'}</span>
-                  <a href={`data:${item.fileType||'application/pdf'};base64,${item.fileData}`} download={item.fileName||'document'} style={{color:'var(--accent-mid)',textDecoration:'none',fontSize:12}}>⬇ Download</a>
+                <div style={{padding:'10px 14px',borderTop:'1px solid var(--border)',display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+                  <span style={{fontSize:12,color:'var(--muted)'}}>📎 {item.fileName||'Document'}</span>
+                  <div style={{display:'flex',gap:6}}>
+                    <a href={`data:${item.fileType||'application/pdf'};base64,${item.fileData}`} target="_blank" rel="noreferrer"
+                      style={{display:'inline-flex',alignItems:'center',gap:4,fontSize:12,fontWeight:500,padding:'5px 10px',borderRadius:'var(--radius-sm)',background:'var(--surface2)',color:'var(--text)',textDecoration:'none',border:'1px solid var(--border)'}}>
+                      👁 View
+                    </a>
+                    <button style={{display:'inline-flex',alignItems:'center',gap:4,fontSize:12,fontWeight:500,padding:'5px 10px',borderRadius:'var(--radius-sm)',background:'var(--surface2)',color:'var(--text)',border:'1px solid var(--border)',cursor:'pointer'}}
+                      onClick={()=>{
+                        const w=window.open('','_blank');
+                        const src=`data:${item.fileType||'application/pdf'};base64,${item.fileData}`;
+                        if(item.fileType&&item.fileType.startsWith('image/')){
+                          w.document.write(`<html><body style="margin:0;background:#000;display:flex;justify-content:center;align-items:center;min-height:100vh"><img src="${src}" style="max-width:100%;max-height:100vh"/></body></html>`);
+                        } else {
+                          w.document.write(`<html><body style="margin:0"><embed src="${src}" width="100%" height="100%" style="position:fixed;inset:0"/></body></html>`);
+                        }
+                        w.document.close();
+                        setTimeout(()=>w.print(),600);
+                      }}>
+                      🖨 Print
+                    </button>
+                    <a href={`data:${item.fileType||'application/pdf'};base64,${item.fileData}`} download={item.fileName||'document'}
+                      style={{display:'inline-flex',alignItems:'center',gap:4,fontSize:12,fontWeight:500,padding:'5px 10px',borderRadius:'var(--radius-sm)',background:'var(--accent-light)',color:'var(--accent-mid)',textDecoration:'none',border:'1px solid rgba(45,107,71,0.2)'}}>
+                      ⬇ Download
+                    </a>
+                  </div>
                 </div>
               </div>
             ):(
@@ -660,6 +731,125 @@ function DeleteModal({item,onConfirm,onClose}){
 }
 
 /* ════════════════════ CATEGORY MANAGER ════════════════════ */
+/* ════════════════════ SETTINGS PAGE ════════════════════ */
+function SettingsPage({categories,setCategories,expenses,setExpenses,apiKey,setApiKey}){
+  const [newName,  setNewName]  = useState('');
+  const [editing,  setEditing]  = useState(null);
+  const [local,    setLocal]    = useState(categories.map(c=>({...c})));
+  const [apiInput, setApiInput] = useState('');
+  const [apiSaved, setApiSaved] = useState(false);
+  const [catSaved, setCatSaved] = useState(false);
+
+  // keep local in sync if categories change externally
+  useEffect(()=>setLocal(categories.map(c=>({...c}))),[categories]);
+
+  const addCat=()=>{
+    const t=newName.trim();
+    if(!t||local.find(c=>c.name===t))return;
+    setLocal(p=>[...p,{id:'cat-'+Date.now(),name:t}]);
+    setNewName('');
+  };
+  const removeCat=id=>setLocal(p=>p.filter(c=>c.id!==id));
+  const renameSave=()=>{
+    if(!editing||!editing.name.trim())return;
+    setLocal(p=>p.map(c=>c.id===editing.id?{...c,name:editing.name.trim()}:c));
+    setEditing(null);
+  };
+  const saveCats=()=>{
+    const renameMap={};
+    categories.forEach(orig=>{
+      const updated=local.find(l=>l.id===orig.id);
+      if(updated&&updated.name!==orig.name) renameMap[orig.name]=updated.name;
+    });
+    if(Object.keys(renameMap).length>0){
+      setExpenses(prev=>prev.map(e=>renameMap[e.category]?{...e,category:renameMap[e.category]}:e));
+    }
+    setCategories(local);
+    setCatSaved(true);
+    setTimeout(()=>setCatSaved(false),2500);
+  };
+  const saveApiKey=()=>{
+    setApiKey(apiInput.trim());
+    setApiInput('');
+    setApiSaved(true);
+    setTimeout(()=>setApiSaved(false),2500);
+  };
+
+  return(
+    <div style={{maxWidth:640}}>
+      <div className="page-header" style={{display:'block'}}>
+        <div className="page-title">Settings</div>
+        <div className="page-sub">Manage categories and application configuration</div>
+      </div>
+
+      {/* ── Category Management ── */}
+      <div className="card" style={{marginBottom:20}}>
+        <div className="card-header">
+          <span className="card-title">Expense Categories</span>
+          {catSaved&&<span style={{fontSize:12,color:'var(--accent-mid)',fontWeight:500}}>✓ Saved & applied to all records</span>}
+        </div>
+        <div className="card-body">
+          <p style={{fontSize:12,color:'var(--muted)',marginBottom:14}}>Click a category name or <strong>Rename</strong> to edit it. Renaming updates all existing expense records automatically.</p>
+          <div style={{display:'flex',flexDirection:'column',gap:6,maxHeight:420,overflowY:'auto'}}>
+            {local.map((c,i)=>(
+              <div key={c.id} style={{display:'flex',alignItems:'center',gap:8,padding:'9px 12px',border:'1px solid var(--border)',borderRadius:'var(--radius-sm)',background:'var(--surface)'}}>
+                <span style={{width:10,height:10,borderRadius:2,background:CHART_COLORS[i%CHART_COLORS.length],flexShrink:0}}></span>
+                {editing&&editing.id===c.id?(
+                  <input style={{flex:1,fontSize:13,padding:'3px 8px'}} value={editing.name}
+                    onChange={e=>setEditing(v=>({...v,name:e.target.value}))}
+                    onKeyDown={e=>{if(e.key==='Enter')renameSave();if(e.key==='Escape')setEditing(null);}}
+                    autoFocus/>
+                ):(
+                  <span style={{flex:1,fontSize:13,cursor:'text'}} onClick={()=>setEditing({id:c.id,name:c.name})}>{c.name}</span>
+                )}
+                {editing&&editing.id===c.id?(
+                  <>
+                    <button className="btn btn-primary btn-sm" onClick={renameSave}>✓ Save</button>
+                    <button className="btn btn-outline btn-sm" onClick={()=>setEditing(null)}>Cancel</button>
+                  </>
+                ):(
+                  <button className="btn btn-outline btn-sm" onClick={()=>setEditing({id:c.id,name:c.name})}>Rename</button>
+                )}
+                <button className="btn btn-danger btn-sm" onClick={()=>removeCat(c.id)}>✕</button>
+              </div>
+            ))}
+          </div>
+          <div style={{display:'flex',gap:8,marginTop:12}}>
+            <input type="text" placeholder="New category name..." value={newName} style={{flex:1}} onChange={e=>setNewName(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addCat()}/>
+            <button className="btn btn-outline" onClick={addCat} disabled={!newName.trim()}>+ Add</button>
+          </div>
+          <div style={{marginTop:14,display:'flex',justifyContent:'flex-end'}}>
+            <button className="btn btn-primary" onClick={saveCats}>Save changes</button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── API Key ── */}
+      <div className="card">
+        <div className="card-header">
+          <span className="card-title">Anthropic API Key</span>
+          {apiSaved&&<span style={{fontSize:12,color:'var(--accent-mid)',fontWeight:500}}>✓ Saved</span>}
+        </div>
+        <div className="card-body">
+          <p style={{fontSize:12,color:'var(--muted)',marginBottom:12}}>Required for AI receipt scanning. Your key is stored only in your browser's local storage and never sent to any server other than Anthropic's API.</p>
+          <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
+            <div style={{flex:1,minWidth:200,position:'relative'}}>
+              <input type="password" placeholder="sk-ant-..." value={apiInput} onChange={e=>setApiInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&saveApiKey()} style={{width:'100%',fontFamily:'DM Mono,monospace',fontSize:12}}/>
+            </div>
+            <button className="btn btn-primary" onClick={saveApiKey} disabled={!apiInput.trim()}>Save key</button>
+          </div>
+          {apiKey&&(
+            <div style={{marginTop:10,fontSize:12,color:'var(--accent-mid)',display:'flex',alignItems:'center',gap:6}}>
+              ✓ API key is set &nbsp;<span style={{fontFamily:'DM Mono,monospace',color:'var(--muted)'}}>{apiKey.slice(0,12)}••••••••</span>
+              <button className="btn btn-danger btn-sm" style={{marginLeft:4}} onClick={()=>setApiKey('')}>Remove</button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CategoryManager({categories,setCategories,expenses,setExpenses,onClose}){
   const [local,  setLocal]  = useState(categories.map(c=>({...c})));
   const [newName,setNewName]= useState('');
