@@ -124,34 +124,32 @@ const { useState, useEffect, useRef } = React;
 const CHART_COLORS = ['#2d6b47','#1a4b8c','#5b2d9e','#b8750a','#0f6e6e','#9e1a5e','#c0392b','#185fa5','#5f5e5a','#a05c10'];
 
 const DEFAULT_CATEGORIES = [
-  {id:'fleet-maint', name:'Fleet — Maintenance'},
-  {id:'fleet-ins',   name:'Fleet — Insurance & Road Tax'},
-  {id:'fleet-tng',   name:'Fleet — Touch & Go'},
-  {id:'inv-pantry',  name:'Office Inventory — Pantry'},
-  {id:'inv-stat',    name:'Office Inventory — Stationery'},
-  {id:'inv-clean',   name:'Office Inventory — Cleaning'},
-  {id:'it-asset',    name:'IT Asset Management'},
-  {id:'admin',       name:'Administration'},
-  {id:'adhoc',       name:'Ad Hoc Expenses'},
+  { id:'fleet',  name:'Fleet Management', subs:['Maintenance','Insurance & Road Tax','Touch & Go'] },
+  { id:'office', name:'Office Management', subs:['Pantry','Stationery','Cleaning','Aircond Service','Pest Control'] },
+  { id:'it',     name:'IT Asset Management', subs:[] },
+  { id:'admin',  name:'Administration', subs:[] },
+  { id:'adhoc',  name:'Ad Hoc Expenses', subs:[] },
 ];
 
 const SAMPLE_DATA = [
-  {id:1, date:'2026-01-08', vendor:'Petronas',       amount:320.00,  category:'Fleet — Maintenance',          description:'Engine oil & service, Proton X70',   fileData:null,fileName:null,fileType:null},
-  {id:2, date:'2026-01-15', vendor:'Pos Malaysia',   amount:1800.00, category:'Fleet — Insurance & Road Tax', description:'Road tax renewal, WXX1234',           fileData:null,fileName:null,fileType:null},
-  {id:3, date:'2026-02-03', vendor:'Touch & Go',     amount:200.00,  category:'Fleet — Touch & Go',           description:'TnG reload, company vehicle',          fileData:null,fileName:null,fileType:null},
-  {id:4, date:'2026-02-10', vendor:'Jaya Grocer',    amount:185.50,  category:'Office Inventory — Pantry',    description:'Coffee, tea, snacks for office',       fileData:null,fileName:null,fileType:null},
-  {id:5, date:'2026-02-20', vendor:'MPH',            amount:95.00,   category:'Office Inventory — Stationery',description:'A4 paper, pens, folders',              fileData:null,fileName:null,fileType:null},
-  {id:6, date:'2026-03-05', vendor:'Ecolab',         amount:260.00,  category:'Office Inventory — Cleaning',  description:'Monthly cleaning supplies',            fileData:null,fileName:null,fileType:null},
-  {id:7, date:'2026-03-12', vendor:'Dell Malaysia',  amount:4200.00, category:'IT Asset Management',          description:'Monitor replacement, finance dept',    fileData:null,fileName:null,fileType:null},
-  {id:8, date:'2026-03-18', vendor:'Lembaga Hasil',  amount:500.00,  category:'Administration',               description:'Stamp duty, tenancy agreement',        fileData:null,fileName:null,fileType:null},
-  {id:9, date:'2026-03-25', vendor:'Hazloc Solution',amount:300.00,  category:'Ad Hoc Expenses',              description:'Pest control, unit 15-7 & 15-8',      fileData:null,fileName:null,fileType:null},
-  {id:10,date:'2026-04-01', vendor:'Sachenais Food', amount:1300.00, category:'Ad Hoc Expenses',              description:'Catering 25 pax, 1 & 2 Apr 2026',    fileData:null,fileName:null,fileType:null},
+  {id:1, date:'2026-01-08', vendor:'Petronas',       amount:320.00,  cat:'Fleet Management',    sub:'Maintenance',          description:'Engine oil & service, Proton X70',   fileData:null,fileName:null,fileType:null},
+  {id:2, date:'2026-01-15', vendor:'Pos Malaysia',   amount:1800.00, cat:'Fleet Management',    sub:'Insurance & Road Tax', description:'Road tax renewal, WXX1234',           fileData:null,fileName:null,fileType:null},
+  {id:3, date:'2026-02-03', vendor:'Touch & Go',     amount:200.00,  cat:'Fleet Management',    sub:'Touch & Go',           description:'TnG reload, company vehicle',          fileData:null,fileName:null,fileType:null},
+  {id:4, date:'2026-02-10', vendor:'Jaya Grocer',    amount:185.50,  cat:'Office Management',   sub:'Pantry',               description:'Coffee, tea, snacks for office',       fileData:null,fileName:null,fileType:null},
+  {id:5, date:'2026-02-20', vendor:'MPH',            amount:95.00,   cat:'Office Management',   sub:'Stationery',           description:'A4 paper, pens, folders',              fileData:null,fileName:null,fileType:null},
+  {id:6, date:'2026-03-05', vendor:'Ecolab',         amount:260.00,  cat:'Office Management',   sub:'Cleaning',             description:'Monthly cleaning supplies',            fileData:null,fileName:null,fileType:null},
+  {id:7, date:'2026-03-12', vendor:'Dell Malaysia',  amount:4200.00, cat:'IT Asset Management', sub:'',                     description:'Monitor replacement, finance dept',    fileData:null,fileName:null,fileType:null},
+  {id:8, date:'2026-03-18', vendor:'Lembaga Hasil',  amount:500.00,  cat:'Administration',      sub:'',                     description:'Stamp duty, tenancy agreement',        fileData:null,fileName:null,fileType:null},
+  {id:9, date:'2026-03-25', vendor:'Hazloc Solution',amount:300.00,  cat:'Office Management',   sub:'Pest Control',         description:'Pest control, unit 15-7 & 15-8',      fileData:null,fileName:null,fileType:null},
+  {id:10,date:'2026-04-01', vendor:'Sachenais Food', amount:1300.00, cat:'Ad Hoc Expenses',     sub:'',                     description:'Catering 25 pax, 1 & 2 Apr 2026',    fileData:null,fileName:null,fileType:null},
 ];
 
 const fmt = n => 'RM '+Number(n).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
 const bc  = i => 'b'+(i%9);
+// Returns display label for an expense: "Fleet Management › Maintenance" or just "Administration"
+const catLabel = e => e.sub ? `${e.cat} › ${e.sub}` : e.cat;
 
-const SKEY='farcapital_exp_v4', AKEY='farcapital_apikey', CKEY='farcapital_cat_v4';
+const SKEY='farcapital_exp_v5', AKEY='farcapital_apikey', CKEY='farcapital_cat_v5';
 const loadEx  = ()=>{ try{ const r=localStorage.getItem(SKEY); return r?JSON.parse(r):SAMPLE_DATA; }catch{return SAMPLE_DATA;} };
 const loadCat = ()=>{ try{ const r=localStorage.getItem(CKEY); return r?JSON.parse(r):DEFAULT_CATEGORIES; }catch{return DEFAULT_CATEGORIES;} };
 
@@ -164,11 +162,10 @@ function App(){
   const [editItem,   setEditItem]   = useState(null);
   const [deleteItem, setDeleteItem] = useState(null);
   const [detailItem, setDetailItem] = useState(null);
-  const [showCatMgr, setShowCatMgr] = useState(false);
   const [filterYear, setFilterYear] = useState(new Date().getFullYear());
   const [filterMonth,setFilterMonth]= useState('');
-  const [filterCat,  setFilterCat]  = useState('');
-  const [viewYear,   setViewYear]   = useState(new Date().getFullYear());
+  const [filterCat,  setFilterCat]  = useState('');  // filters on cat name
+  const [filterSub,  setFilterSub]  = useState('');  // filters on sub name
   const [apiKey,     setApiKey]     = useState(()=>localStorage.getItem(AKEY)||'');
   const [apiInput,   setApiInput]   = useState('');
   const [showApi,    setShowApi]    = useState(false);
@@ -177,19 +174,7 @@ function App(){
   useEffect(()=>{ try{localStorage.setItem(SKEY,JSON.stringify(expenses));}catch{} },[expenses]);
   useEffect(()=>{ try{localStorage.setItem(CKEY,JSON.stringify(categories));}catch{} },[categories]);
 
-  const catNames = categories.map(c=>c.name);
-
   const allYears = [...new Set([...expenses.map(e=>new Date(e.date).getFullYear()),new Date().getFullYear()])].sort((a,b)=>b-a);
-  const yExp   = expenses.filter(e=>new Date(e.date).getFullYear()===viewYear);
-  const total  = yExp.reduce((s,e)=>s+e.amount,0);
-  const now    = new Date();
-  const mExp   = expenses.filter(e=>{ const d=new Date(e.date); return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth(); });
-  const mTotal = mExp.reduce((s,e)=>s+e.amount,0);
-  const catTot = {};
-  yExp.forEach(e=>{ catTot[e.category]=(catTot[e.category]||0)+e.amount; });
-  const topCat = Object.entries(catTot).sort((a,b)=>b[1]-a[1])[0];
-  const mTotals= Array(12).fill(0);
-  yExp.forEach(e=>{ mTotals[new Date(e.date).getMonth()]+=e.amount; });
 
   const addExpense = (data, fromUpload=false) => {
     setExpenses(prev=>[...prev,{...data,id:nextId.current++}]);
@@ -204,7 +189,8 @@ function App(){
     const d=new Date(e.date);
     if(filterYear  && d.getFullYear()!==Number(filterYear))   return false;
     if(filterMonth && (d.getMonth()+1)!==Number(filterMonth)) return false;
-    if(filterCat   && e.category!==filterCat)                 return false;
+    if(filterCat   && e.cat!==filterCat)                      return false;
+    if(filterSub   && e.sub!==filterSub)                      return false;
     return true;
   });
 
@@ -249,14 +235,14 @@ function App(){
         {/* ── Content ── */}
         <div className="content">
           {page==='dashboard'&&<Dashboard expenses={expenses} allYears={allYears} categories={categories} onDetail={setDetailItem}/>}
-          {page==='expenses' &&<ExpensesPage expenses={filtered} allExp={expenses} filterYear={filterYear} setFilterYear={setFilterYear} filterMonth={filterMonth} setFilterMonth={setFilterMonth} filterCat={filterCat} setFilterCat={setFilterCat} onEdit={setEditItem} onDelete={setDeleteItem} onDetail={setDetailItem} categories={categories}/>}
-          {page==='upload'   &&<UploadPage onAdd={d=>addExpense(d,true)} apiKey={apiKey} catNames={catNames}/>}
+          {page==='expenses' &&<ExpensesPage expenses={filtered} allExp={expenses} filterYear={filterYear} setFilterYear={setFilterYear} filterMonth={filterMonth} setFilterMonth={setFilterMonth} filterCat={filterCat} setFilterCat={setFilterCat} filterSub={filterSub} setFilterSub={setFilterSub} onEdit={setEditItem} onDelete={setDeleteItem} onDetail={setDetailItem} categories={categories}/>}
+          {page==='upload'   &&<UploadPage onAdd={d=>addExpense(d,true)} apiKey={apiKey} categories={categories}/>}
           {page==='settings' &&<SettingsPage categories={categories} setCategories={setCategories} expenses={expenses} setExpenses={setExpenses} apiKey={apiKey} setApiKey={k=>{setApiKey(k);localStorage.setItem(AKEY,k);}}/>}
         </div>
       </div>
 
-      {showAdd    &&<ExpenseModal title="Add Expense"  catNames={catNames} onSave={addExpense}   onClose={()=>setShowAdd(false)}/>}
-      {editItem   &&<ExpenseModal title="Edit Expense" catNames={catNames} item={editItem} onSave={updExpense} onClose={()=>setEditItem(null)}/>}
+      {showAdd    &&<ExpenseModal title="Add Expense"  categories={categories} onSave={addExpense}   onClose={()=>setShowAdd(false)}/>}
+      {editItem   &&<ExpenseModal title="Edit Expense" categories={categories} item={editItem} onSave={updExpense} onClose={()=>setEditItem(null)}/>}
       {deleteItem &&<DeleteModal  item={deleteItem} onConfirm={()=>delExpense(deleteItem.id)} onClose={()=>setDeleteItem(null)}/>}
       {detailItem &&<DetailModal  item={detailItem} categories={categories} onEdit={()=>{setEditItem(detailItem);setDetailItem(null);}} onDelete={()=>{setDeleteItem(detailItem);setDetailItem(null);}} onClose={()=>setDetailItem(null)}/>}
     </div>
@@ -282,7 +268,7 @@ function Dashboard({expenses,allYears,categories,onDetail}){
   const mTotal=mExp.reduce((s,e)=>s+e.amount,0);
 
   const catTotB={};
-  expB.forEach(e=>{catTotB[e.category]=(catTotB[e.category]||0)+e.amount;});
+  expB.forEach(e=>{ const k=e.cat; catTotB[k]=(catTotB[k]||0)+e.amount; });
   const topCat=Object.entries(catTotB).sort((a,b)=>b[1]-a[1])[0];
   const sortedCats=Object.entries(catTotB).sort((a,b)=>b[1]-a[1]);
   const maxC=sortedCats[0]?.[1]||1;
@@ -378,11 +364,11 @@ function Dashboard({expenses,allYears,categories,onDetail}){
           <thead><tr><th>Date</th><th>Vendor</th><th>Category</th><th>Description</th><th style={{textAlign:'right'}}>Amount</th></tr></thead>
           <tbody>
             {recent.map(e=>{
-              const ci=categories.findIndex(c=>c.name===e.category);
+              const ci=categories.findIndex(c=>c.name===e.cat);
               return(<tr key={e.id} className="clickable" onDoubleClick={()=>onDetail(e)}>
                 <td style={{color:'var(--muted)',fontSize:12,whiteSpace:'nowrap'}}>{new Date(e.date).toLocaleDateString('en-MY',{day:'2-digit',month:'short',year:'2-digit'})}</td>
                 <td style={{fontWeight:500}}>{e.vendor}</td>
-                <td><span className={`badge ${bc(ci<0?8:ci)}`}>{e.category}</span></td>
+                <td><span className={`badge ${bc(ci<0?8:ci)}`}>{catLabel(e)}</span></td>
                 <td style={{color:'var(--muted)',maxWidth:200,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{e.description}</td>
                 <td style={{textAlign:'right'}} className="amount">{fmt(e.amount)}</td>
               </tr>);
@@ -395,10 +381,13 @@ function Dashboard({expenses,allYears,categories,onDetail}){
 }
 
 /* ════════════════════ ALL EXPENSES ════════════════════ */
-function ExpensesPage({expenses,allExp,filterYear,setFilterYear,filterMonth,setFilterMonth,filterCat,setFilterCat,onEdit,onDelete,onDetail,categories}){
+function ExpensesPage({expenses,allExp,filterYear,setFilterYear,filterMonth,setFilterMonth,filterCat,setFilterCat,filterSub,setFilterSub,onEdit,onDelete,onDetail,categories}){
   const years=[...new Set(allExp.map(e=>new Date(e.date).getFullYear()))].sort((a,b)=>b-a);
   const total=expenses.reduce((s,e)=>s+e.amount,0);
   const sorted=[...expenses].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const selCat=categories.find(c=>c.name===filterCat);
+  const subOptions=selCat?.subs||[];
+  const clearAll=()=>{setFilterYear('');setFilterMonth('');setFilterCat('');setFilterSub('');};
   return(
     <div>
       <div className="page-header">
@@ -413,11 +402,17 @@ function ExpensesPage({expenses,allExp,filterYear,setFilterYear,filterMonth,setF
           <option value="">All months</option>
           {['January','February','March','April','May','June','July','August','September','October','November','December'].map((m,i)=><option key={i} value={i+1}>{m}</option>)}
         </select>
-        <select value={filterCat} onChange={e=>setFilterCat(e.target.value)}>
+        <select value={filterCat} onChange={e=>{setFilterCat(e.target.value);setFilterSub('');}}>
           <option value="">All categories</option>
           {categories.map(c=><option key={c.id} value={c.name}>{c.name}</option>)}
         </select>
-        {(filterYear||filterMonth||filterCat)&&<button className="btn btn-outline btn-sm" onClick={()=>{setFilterYear('');setFilterMonth('');setFilterCat('');}}>Clear</button>}
+        {subOptions.length>0&&(
+          <select value={filterSub} onChange={e=>setFilterSub(e.target.value)}>
+            <option value="">All sub-categories</option>
+            {subOptions.map(s=><option key={s} value={s}>{s}</option>)}
+          </select>
+        )}
+        {(filterYear||filterMonth||filterCat||filterSub)&&<button className="btn btn-outline btn-sm" onClick={clearAll}>Clear</button>}
       </div>
       <p className="hint" style={{marginBottom:10}}>💡 Double-click any row to view full details and attached invoice/receipt</p>
       <div className="card">
@@ -425,15 +420,16 @@ function ExpensesPage({expenses,allExp,filterYear,setFilterYear,filterMonth,setF
           <div className="empty-state"><div className="empty-icon">📋</div><div>No expenses found</div><div style={{fontSize:12,marginTop:4}}>Try adjusting your filters</div></div>
         ):(
           <table>
-            <thead><tr><th>Date</th><th>Vendor</th><th>Category</th><th>Description</th><th style={{textAlign:'right'}}>Amount</th><th>Doc</th><th></th></tr></thead>
+            <thead><tr><th>Date</th><th>Vendor</th><th>Category</th><th>Sub-category</th><th>Description</th><th style={{textAlign:'right'}}>Amount</th><th>Doc</th><th></th></tr></thead>
             <tbody>
               {sorted.map(e=>{
-                const ci=categories.findIndex(c=>c.name===e.category);
+                const ci=categories.findIndex(c=>c.name===e.cat);
                 return(<tr key={e.id} className="clickable" onDoubleClick={()=>onDetail(e)}>
                   <td style={{color:'var(--muted)',fontSize:12,whiteSpace:'nowrap'}}>{new Date(e.date).toLocaleDateString('en-MY',{day:'2-digit',month:'short',year:'2-digit'})}</td>
                   <td style={{fontWeight:500}}>{e.vendor}</td>
-                  <td><span className={`badge ${bc(ci<0?8:ci)}`}>{e.category}</span></td>
-                  <td style={{color:'var(--muted)',maxWidth:180,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{e.description}</td>
+                  <td><span className={`badge ${bc(ci<0?8:ci)}`}>{e.cat}</span></td>
+                  <td style={{color:'var(--muted)',fontSize:12}}>{e.sub||'—'}</td>
+                  <td style={{color:'var(--muted)',maxWidth:160,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{e.description}</td>
                   <td style={{textAlign:'right'}} className="amount">{fmt(e.amount)}</td>
                   <td style={{textAlign:'center',fontSize:16}}>{e.fileData?'📎':'—'}</td>
                   <td style={{textAlign:'right',whiteSpace:'nowrap'}}>
@@ -452,13 +448,13 @@ function ExpensesPage({expenses,allExp,filterYear,setFilterYear,filterMonth,setF
 
 /* ════════════════════ DETAIL MODAL ════════════════════ */
 function DetailModal({item,categories,onEdit,onDelete,onClose}){
-  const ci=categories.findIndex(c=>c.name===item.category);
+  const ci=categories.findIndex(c=>c.name===item.cat);
   return(
     <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="modal modal-lg">
         <div className="modal-header">
           <div>
-            <span className={`badge ${bc(ci<0?8:ci)}`} style={{marginBottom:8,display:'inline-flex'}}>{item.category}</span>
+            <span className={`badge ${bc(ci<0?8:ci)}`} style={{marginBottom:8,display:'inline-flex'}}>{item.cat}{item.sub?' › '+item.sub:''}</span>
             <div className="modal-title" style={{fontSize:18}}>{item.vendor}</div>
           </div>
           <button className="btn btn-outline btn-sm" onClick={onClose}>✕</button>
@@ -541,13 +537,14 @@ function DetailModal({item,categories,onEdit,onDelete,onClose}){
 }
 
 /* ════════════════════ UPLOAD PAGE ════════════════════ */
-function UploadPage({onAdd,apiKey,catNames}){
+function UploadPage({onAdd,apiKey,categories}){
+  const firstCat=categories[0]?.name||'';
   const [stage,   setStage]   = useState('idle');
   const [result,  setResult]  = useState(null);
   const [dragging,setDragging]= useState(false);
   const [errMsg,  setErrMsg]  = useState('');
   const [captured,setCaptured]= useState(null);
-  const [form,    setForm]    = useState({date:new Date().toISOString().slice(0,10),vendor:'',amount:'',category:catNames[0]||'',description:''});
+  const [form,    setForm]    = useState({date:new Date().toISOString().slice(0,10),vendor:'',amount:'',cat:firstCat,sub:'',description:''});
   const fileRef=useRef();
   const sf=(k,v)=>setForm(f=>({...f,[k]:v}));
 
@@ -559,18 +556,22 @@ function UploadPage({onAdd,apiKey,catNames}){
       const base64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});
       setCaptured({base64,name:file.name,type:file.type});
       const isImg=file.type.startsWith('image/'), isPDF=file.type==='application/pdf';
-      const catList=catNames.join(' | ');
+      // Build a flat category list for the AI prompt
+      const catList=categories.map(c=>c.subs.length>0?c.subs.map(s=>`${c.name} > ${s}`).join(' | '):`${c.name}`).join(' | ');
       const prompt=`You are an expense extraction assistant for Far Capital, a Malaysian company.
 
 Read this receipt or invoice carefully and extract:
-- vendor: the supplier/company at the TOP of the document (the issuer), NOT the "TO:" recipient (Far Capital is always the recipient, never the vendor)
+- vendor: the supplier/company at the TOP of the document (the issuer), NOT the "TO:" recipient (Far Capital is the recipient, not the vendor)
 - date: the invoice or receipt date in YYYY-MM-DD format
 - amount: the final Total Payable / Grand Total as a plain number in RM, no currency symbol
-- category: pick EXACTLY one from this list: ${catList}
+- cat: the main category name (e.g. "Fleet Management", "Office Management", "IT Asset Management", "Administration", "Ad Hoc Expenses")
+- sub: the sub-category if applicable (e.g. "Maintenance", "Pantry", "Cleaning") — leave empty string if none applies
 - description: one concise line summarizing what was purchased or serviced
 
+Available categories: ${catList}
+
 Respond ONLY with valid JSON, no markdown, no extra text:
-{"vendor":"...","date":"YYYY-MM-DD","amount":0.00,"category":"...","description":"..."}`;
+{"vendor":"...","date":"YYYY-MM-DD","amount":0.00,"cat":"...","sub":"...","description":"..."}`;
 
       let content;
       if(isImg)      content=[{type:'image',source:{type:'base64',media_type:file.type,data:base64}},{type:'text',text:prompt}];
@@ -583,7 +584,15 @@ Respond ONLY with valid JSON, no markdown, no extra text:
       const text=data.content?.find(b=>b.type==='text')?.text||'';
       const parsed=JSON.parse(text.replace(/```json|```/g,'').trim());
       setResult(parsed);
-      setForm({date:parsed.date||new Date().toISOString().slice(0,10),vendor:parsed.vendor||'',amount:parsed.amount?.toString()||'',category:catNames.includes(parsed.category)?parsed.category:catNames[0]||'',description:parsed.description||''});
+      const matchedCat=categories.find(c=>c.name===parsed.cat);
+      setForm({
+        date:parsed.date||new Date().toISOString().slice(0,10),
+        vendor:parsed.vendor||'',
+        amount:parsed.amount?.toString()||'',
+        cat:matchedCat?parsed.cat:firstCat,
+        sub:matchedCat?.subs.includes(parsed.sub)?parsed.sub:'',
+        description:parsed.description||''
+      });
       setStage('result');
     }catch(e){setErrMsg('Could not extract: '+e.message+'. Fill in manually below.');setStage('manual');}
   };
@@ -592,9 +601,9 @@ Respond ONLY with valid JSON, no markdown, no extra text:
 
   const handleSave=()=>{
     if(!form.vendor||!form.amount||!form.date)return;
-    onAdd({date:form.date,vendor:form.vendor,amount:parseFloat(form.amount),category:form.category,description:form.description,fileData:captured?.base64||null,fileName:captured?.name||null,fileType:captured?.type||null});
+    onAdd({date:form.date,vendor:form.vendor,amount:parseFloat(form.amount),cat:form.cat,sub:form.sub,description:form.description,fileData:captured?.base64||null,fileName:captured?.name||null,fileType:captured?.type||null});
     setStage('saved');setResult(null);setCaptured(null);
-    setForm({date:new Date().toISOString().slice(0,10),vendor:'',amount:'',category:catNames[0]||'',description:''});
+    setForm({date:new Date().toISOString().slice(0,10),vendor:'',amount:'',cat:firstCat,sub:'',description:''});
   };
 
   return(
@@ -633,27 +642,23 @@ Respond ONLY with valid JSON, no markdown, no extra text:
             <button className="btn btn-outline btn-sm" onClick={()=>{setStage('idle');setResult(null);setCaptured(null);}}>Cancel</button>
           </div>
           <div className="card-body">
-            {stage==='result'&&result&&<div className="scan-result-preview" style={{marginBottom:14}}>Identified: <strong>{result.vendor}</strong> · <strong>{fmt(result.amount)}</strong> · <strong>{result.category}</strong></div>}
+            {stage==='result'&&result&&<div className="scan-result-preview" style={{marginBottom:14}}>Identified: <strong>{result.vendor}</strong> · <strong>{fmt(result.amount)}</strong> · <strong>{result.cat}{result.sub?' › '+result.sub:''}</strong></div>}
             {errMsg&&<div style={{background:'var(--danger-light)',border:'1px solid rgba(192,57,43,0.15)',borderRadius:'var(--radius-sm)',padding:'10px 12px',fontSize:12,color:'var(--danger)',marginBottom:14}}>{errMsg}</div>}
-
             {captured&&(
-              <div>
+              <div style={{marginBottom:12}}>
                 <div className="form-label" style={{marginBottom:6}}>Attached document</div>
                 <div className="attachment-box">
                   {captured.type.startsWith('image/')?(<img className="attachment-img" src={`data:${captured.type};base64,${captured.base64}`} alt="receipt" style={{maxHeight:160}}/>):(<div className="attachment-placeholder">📎 {captured.name} (PDF — will be saved with record)</div>)}
                 </div>
               </div>
             )}
-
             <div style={{display:'flex',flexDirection:'column',gap:12}}>
               <div className="form-row">
                 <div className="form-group"><label className="form-label">Date *</label><input type="date" value={form.date} onChange={e=>sf('date',e.target.value)}/></div>
                 <div className="form-group"><label className="form-label">Amount (RM) *</label><input type="number" placeholder="0.00" step="0.01" min="0" value={form.amount} onChange={e=>sf('amount',e.target.value)}/></div>
               </div>
               <div className="form-group"><label className="form-label">Vendor / Merchant *</label><input type="text" placeholder="e.g. Grab, Petronas" value={form.vendor} onChange={e=>sf('vendor',e.target.value)}/></div>
-              <div className="form-group"><label className="form-label">Category</label>
-                <select value={form.category} onChange={e=>sf('category',e.target.value)}>{catNames.map(c=><option key={c} value={c}>{c}</option>)}</select>
-              </div>
+              <CategoryPicker categories={categories} cat={form.cat} sub={form.sub} onChange={(c,s)=>setForm(f=>({...f,cat:c,sub:s}))}/>
               <div className="form-group"><label className="form-label">Description</label><input type="text" placeholder="Brief note" value={form.description} onChange={e=>sf('description',e.target.value)}/></div>
             </div>
           </div>
@@ -670,7 +675,7 @@ Respond ONLY with valid JSON, no markdown, no extra text:
         <div className="card"><div className="card-body" style={{textAlign:'center',padding:'36px 20px'}}>
           <div style={{fontSize:36,marginBottom:12}}>✅</div>
           <div style={{fontWeight:600,fontSize:16,marginBottom:4}}>Expense saved!</div>
-          <div style={{fontSize:13,color:'var(--muted)',marginBottom:20}}>You have been redirected to All Expenses.</div>
+          <div style={{fontSize:13,color:'var(--muted)',marginBottom:20}}>Redirected to All Expenses.</div>
           <button className="btn btn-primary" onClick={()=>setStage('idle')}>Scan another</button>
         </div></div>
       )}
@@ -678,11 +683,40 @@ Respond ONLY with valid JSON, no markdown, no extra text:
   );
 }
 
+/* ════════════════════ CATEGORY PICKER (reusable) ════════════════════ */
+function CategoryPicker({categories, cat, sub, onChange}){
+  const selCat=categories.find(c=>c.name===cat)||categories[0];
+  const hasSubs=selCat?.subs?.length>0;
+  return(
+    <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+      <div className="form-group" style={{flex:1,minWidth:160}}>
+        <label className="form-label">Category *</label>
+        <select value={cat} onChange={e=>onChange(e.target.value,'')}>
+          {categories.map(c=><option key={c.id} value={c.name}>{c.name}</option>)}
+        </select>
+      </div>
+      {hasSubs&&(
+        <div className="form-group" style={{flex:1,minWidth:140}}>
+          <label className="form-label">Sub-category</label>
+          <select value={sub} onChange={e=>onChange(cat,e.target.value)}>
+            <option value="">— None —</option>
+            {selCat.subs.map(s=><option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ════════════════════ EXPENSE MODAL ════════════════════ */
-function ExpenseModal({title,item,catNames,onSave,onClose}){
-  const [form,setForm]=useState(item?{...item,amount:item.amount.toString()}:{date:new Date().toISOString().slice(0,10),vendor:'',amount:'',category:catNames[0]||'',description:'',fileData:null,fileName:null,fileType:null});
+function ExpenseModal({title,item,categories,onSave,onClose}){
+  const firstCat=categories[0]?.name||'';
+  const [form,setForm]=useState(item
+    ? {...item, amount:item.amount.toString()}
+    : {date:new Date().toISOString().slice(0,10),vendor:'',amount:'',cat:firstCat,sub:'',description:'',fileData:null,fileName:null,fileType:null}
+  );
   const sf=(k,v)=>setForm(f=>({...f,[k]:v}));
-  const valid=form.vendor.trim()&&form.amount&&form.date;
+  const valid=form.vendor.trim()&&form.amount&&form.date&&form.cat;
   const handleFile=async file=>{
     if(!file)return;
     const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});
@@ -698,9 +732,7 @@ function ExpenseModal({title,item,catNames,onSave,onClose}){
             <div className="form-group"><label className="form-label">Amount (RM) *</label><input type="number" placeholder="0.00" step="0.01" min="0" value={form.amount} onChange={e=>sf('amount',e.target.value)}/></div>
           </div>
           <div className="form-group"><label className="form-label">Vendor / Merchant *</label><input type="text" value={form.vendor} onChange={e=>sf('vendor',e.target.value)}/></div>
-          <div className="form-group"><label className="form-label">Category</label>
-            <select value={form.category} onChange={e=>sf('category',e.target.value)}>{catNames.map(c=><option key={c} value={c}>{c}</option>)}</select>
-          </div>
+          <CategoryPicker categories={categories} cat={form.cat} sub={form.sub} onChange={(c,s)=>setForm(f=>({...f,cat:c,sub:s}))}/>
           <div className="form-group"><label className="form-label">Description</label><input type="text" placeholder="Brief note" value={form.description} onChange={e=>sf('description',e.target.value)}/></div>
           <div className="form-group">
             <label className="form-label">Attach document (optional)</label>
@@ -733,36 +765,65 @@ function DeleteModal({item,onConfirm,onClose}){
 /* ════════════════════ CATEGORY MANAGER ════════════════════ */
 /* ════════════════════ SETTINGS PAGE ════════════════════ */
 function SettingsPage({categories,setCategories,expenses,setExpenses,apiKey,setApiKey}){
-  const [newName,  setNewName]  = useState('');
-  const [editing,  setEditing]  = useState(null);
-  const [local,    setLocal]    = useState(categories.map(c=>({...c})));
-  const [apiInput, setApiInput] = useState('');
-  const [apiSaved, setApiSaved] = useState(false);
-  const [catSaved, setCatSaved] = useState(false);
+  const [newName,   setNewName]   = useState('');
+  const [newSubName,setNewSubName]= useState('');
+  const [newSubId,  setNewSubId]  = useState(null);
+  const [editing,   setEditing]   = useState(null); // {id, name, sub} — sub===null means parent
+  const [local,     setLocal]     = useState(()=>categories.map(c=>({...c, subs:[...(c.subs||[])]})));
+  const [apiInput,  setApiInput]  = useState('');
+  const [apiSaved,  setApiSaved]  = useState(false);
+  const [catSaved,  setCatSaved]  = useState(false);
 
-  // keep local in sync if categories change externally
-  useEffect(()=>setLocal(categories.map(c=>({...c}))),[categories]);
+  useEffect(()=>setLocal(categories.map(c=>({...c,subs:[...(c.subs||[])]}))),[categories]);
 
   const addCat=()=>{
     const t=newName.trim();
     if(!t||local.find(c=>c.name===t))return;
-    setLocal(p=>[...p,{id:'cat-'+Date.now(),name:t}]);
+    setLocal(p=>[...p,{id:'cat-'+Date.now(),name:t,subs:[]}]);
     setNewName('');
   };
   const removeCat=id=>setLocal(p=>p.filter(c=>c.id!==id));
+  const addSub=id=>{
+    const t=newSubName.trim();
+    if(!t)return;
+    setLocal(p=>p.map(c=>c.id===id?{...c,subs:[...c.subs.filter(s=>s!==t),t]}:c));
+    setNewSubName(''); setNewSubId(null);
+  };
+  const removeSub=(id,sub)=>setLocal(p=>p.map(c=>c.id===id?{...c,subs:c.subs.filter(s=>s!==sub)}:c));
   const renameSave=()=>{
-    if(!editing||!editing.name.trim())return;
-    setLocal(p=>p.map(c=>c.id===editing.id?{...c,name:editing.name.trim()}:c));
+    if(!editing||!editing.name.trim()){setEditing(null);return;}
+    const newVal=editing.name.trim();
+    if(editing.sub===null){
+      // Renaming a parent category
+      setLocal(p=>p.map(c=>c.id===editing.id?{...c,name:newVal}:c));
+    } else {
+      // Renaming a sub-category
+      setLocal(p=>p.map(c=>c.id===editing.id?{...c,subs:c.subs.map(s=>s===editing.sub?newVal:s)}:c));
+    }
     setEditing(null);
   };
   const saveCats=()=>{
-    const renameMap={};
+    // Build rename maps for parents and subs
+    const catMap={}, subMap={};
     categories.forEach(orig=>{
       const updated=local.find(l=>l.id===orig.id);
-      if(updated&&updated.name!==orig.name) renameMap[orig.name]=updated.name;
+      if(updated&&updated.name!==orig.name) catMap[orig.name]=updated.name;
+      // sub renames: match by index
+      (orig.subs||[]).forEach((os,si)=>{
+        const ns=updated?.subs?.[si];
+        if(ns&&ns!==os) subMap[orig.name+'|'+os]=(catMap[orig.name]||orig.name)+'|'+ns;
+      });
     });
-    if(Object.keys(renameMap).length>0){
-      setExpenses(prev=>prev.map(e=>renameMap[e.category]?{...e,category:renameMap[e.category]}:e));
+    if(Object.keys(catMap).length>0||Object.keys(subMap).length>0){
+      setExpenses(prev=>prev.map(e=>{
+        const newCat=catMap[e.cat]||e.cat;
+        const subKey=(catMap[e.cat]||e.cat=== e.cat?e.cat:catMap[e.cat])+'|'+e.sub;
+        // Actually use original cat for lookup
+        const origSubKey=e.cat+'|'+e.sub;
+        const subRename=subMap[origSubKey];
+        const newSub=subRename?subRename.split('|')[1]:e.sub;
+        return {...e,cat:newCat,sub:newSub};
+      }));
     }
     setCategories(local);
     setCatSaved(true);
@@ -776,7 +837,7 @@ function SettingsPage({categories,setCategories,expenses,setExpenses,apiKey,setA
   };
 
   return(
-    <div style={{maxWidth:640}}>
+    <div style={{maxWidth:680}}>
       <div className="page-header" style={{display:'block'}}>
         <div className="page-title">Settings</div>
         <div className="page-sub">Manage categories and application configuration</div>
@@ -789,34 +850,60 @@ function SettingsPage({categories,setCategories,expenses,setExpenses,apiKey,setA
           {catSaved&&<span style={{fontSize:12,color:'var(--accent-mid)',fontWeight:500}}>✓ Saved & applied to all records</span>}
         </div>
         <div className="card-body">
-          <p style={{fontSize:12,color:'var(--muted)',marginBottom:14}}>Click a category name or <strong>Rename</strong> to edit it. Renaming updates all existing expense records automatically.</p>
-          <div style={{display:'flex',flexDirection:'column',gap:6,maxHeight:420,overflowY:'auto'}}>
+          <p style={{fontSize:12,color:'var(--muted)',marginBottom:14}}>Each category can have sub-categories. Click any name to rename it inline. Changes are applied to all existing expense records on save.</p>
+          <div style={{display:'flex',flexDirection:'column',gap:10,maxHeight:500,overflowY:'auto'}}>
             {local.map((c,i)=>(
-              <div key={c.id} style={{display:'flex',alignItems:'center',gap:8,padding:'9px 12px',border:'1px solid var(--border)',borderRadius:'var(--radius-sm)',background:'var(--surface)'}}>
-                <span style={{width:10,height:10,borderRadius:2,background:CHART_COLORS[i%CHART_COLORS.length],flexShrink:0}}></span>
-                {editing&&editing.id===c.id?(
-                  <input style={{flex:1,fontSize:13,padding:'3px 8px'}} value={editing.name}
-                    onChange={e=>setEditing(v=>({...v,name:e.target.value}))}
-                    onKeyDown={e=>{if(e.key==='Enter')renameSave();if(e.key==='Escape')setEditing(null);}}
-                    autoFocus/>
-                ):(
-                  <span style={{flex:1,fontSize:13,cursor:'text'}} onClick={()=>setEditing({id:c.id,name:c.name})}>{c.name}</span>
-                )}
-                {editing&&editing.id===c.id?(
-                  <>
-                    <button className="btn btn-primary btn-sm" onClick={renameSave}>✓ Save</button>
-                    <button className="btn btn-outline btn-sm" onClick={()=>setEditing(null)}>Cancel</button>
-                  </>
-                ):(
-                  <button className="btn btn-outline btn-sm" onClick={()=>setEditing({id:c.id,name:c.name})}>Rename</button>
-                )}
-                <button className="btn btn-danger btn-sm" onClick={()=>removeCat(c.id)}>✕</button>
+              <div key={c.id} style={{border:'1px solid var(--border)',borderRadius:'var(--radius-sm)',overflow:'hidden'}}>
+                {/* Parent row */}
+                <div style={{display:'flex',alignItems:'center',gap:8,padding:'9px 12px',background:'var(--surface2)'}}>
+                  <span style={{width:10,height:10,borderRadius:2,background:CHART_COLORS[i%CHART_COLORS.length],flexShrink:0}}></span>
+                  {editing&&editing.id===c.id&&editing.sub===null?(
+                    <input style={{flex:1,fontSize:13,fontWeight:500,padding:'2px 8px'}} value={editing.name}
+                      onChange={e=>setEditing(v=>({...v,name:e.target.value}))}
+                      onKeyDown={e=>{if(e.key==='Enter')renameSave();if(e.key==='Escape')setEditing(null);}} autoFocus/>
+                  ):(
+                    <span style={{flex:1,fontSize:13,fontWeight:500,cursor:'text'}} onClick={()=>setEditing({id:c.id,name:c.name,sub:null})}>{c.name}</span>
+                  )}
+                  {editing&&editing.id===c.id&&editing.sub===null?(
+                    <><button className="btn btn-primary btn-sm" onClick={renameSave}>✓</button><button className="btn btn-outline btn-sm" onClick={()=>setEditing(null)}>✕</button></>
+                  ):(
+                    <button className="btn btn-outline btn-sm" onClick={()=>setEditing({id:c.id,name:c.name,sub:null})}>Rename</button>
+                  )}
+                  <button className="btn btn-danger btn-sm" onClick={()=>removeCat(c.id)} title="Delete category">✕</button>
+                </div>
+                {/* Sub-category rows */}
+                {(c.subs||[]).map((s,si)=>(
+                  <div key={si} style={{display:'flex',alignItems:'center',gap:8,padding:'7px 12px 7px 28px',borderTop:'1px solid var(--border)',background:'var(--surface)'}}>
+                    <span style={{fontSize:11,color:'var(--muted)'}}>└</span>
+                    {editing&&editing.id===c.id&&editing.sub===s?(
+                      <input style={{flex:1,fontSize:12,padding:'2px 8px'}} value={editing.name}
+                        onChange={e=>setEditing(v=>({...v,name:e.target.value}))}
+                        onKeyDown={e=>{if(e.key==='Enter')renameSave();if(e.key==='Escape')setEditing(null);}} autoFocus/>
+                    ):(
+                      <span style={{flex:1,fontSize:12,cursor:'text',color:'var(--text)'}} onClick={()=>setEditing({id:c.id,name:s,sub:s})}>{s}</span>
+                    )}
+                    {editing&&editing.id===c.id&&editing.sub===s?(
+                      <><button className="btn btn-primary btn-sm" onClick={renameSave}>✓</button><button className="btn btn-outline btn-sm" onClick={()=>setEditing(null)}>✕</button></>
+                    ):(
+                      <button className="btn btn-outline btn-sm" onClick={()=>setEditing({id:c.id,name:s,sub:s})}>Rename</button>
+                    )}
+                    <button className="btn btn-danger btn-sm" onClick={()=>removeSub(c.id,s)}>✕</button>
+                  </div>
+                ))}
+                {/* Add sub row */}
+                <div style={{padding:'6px 12px 6px 28px',borderTop:'1px solid var(--border)',background:'var(--surface)',display:'flex',gap:6}}>
+                  <input type="text" placeholder="+ Add sub-category..." value={newSubId===c.id?newSubName:''} style={{flex:1,fontSize:12,padding:'4px 8px'}}
+                    onChange={e=>{setNewSubId(c.id);setNewSubName(e.target.value);}}
+                    onKeyDown={e=>e.key==='Enter'&&addSub(c.id)}/>
+                  <button className="btn btn-outline btn-sm" onClick={()=>addSub(c.id)} disabled={newSubId!==c.id||!newSubName.trim()}>Add</button>
+                </div>
               </div>
             ))}
           </div>
+          {/* Add new top-level category */}
           <div style={{display:'flex',gap:8,marginTop:12}}>
             <input type="text" placeholder="New category name..." value={newName} style={{flex:1}} onChange={e=>setNewName(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addCat()}/>
-            <button className="btn btn-outline" onClick={addCat} disabled={!newName.trim()}>+ Add</button>
+            <button className="btn btn-outline" onClick={addCat} disabled={!newName.trim()}>+ Add Category</button>
           </div>
           <div style={{marginTop:14,display:'flex',justifyContent:'flex-end'}}>
             <button className="btn btn-primary" onClick={saveCats}>Save changes</button>
@@ -833,7 +920,7 @@ function SettingsPage({categories,setCategories,expenses,setExpenses,apiKey,setA
         <div className="card-body">
           <p style={{fontSize:12,color:'var(--muted)',marginBottom:12}}>Required for AI receipt scanning. Your key is stored only in your browser's local storage and never sent to any server other than Anthropic's API.</p>
           <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
-            <div style={{flex:1,minWidth:200,position:'relative'}}>
+            <div style={{flex:1,minWidth:200}}>
               <input type="password" placeholder="sk-ant-..." value={apiInput} onChange={e=>setApiInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&saveApiKey()} style={{width:'100%',fontFamily:'DM Mono,monospace',fontSize:12}}/>
             </div>
             <button className="btn btn-primary" onClick={saveApiKey} disabled={!apiInput.trim()}>Save key</button>
@@ -844,81 +931,6 @@ function SettingsPage({categories,setCategories,expenses,setExpenses,apiKey,setA
               <button className="btn btn-danger btn-sm" style={{marginLeft:4}} onClick={()=>setApiKey('')}>Remove</button>
             </div>
           )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function CategoryManager({categories,setCategories,expenses,setExpenses,onClose}){
-  const [local,  setLocal]  = useState(categories.map(c=>({...c})));
-  const [newName,setNewName]= useState('');
-  const [editing,setEditing]= useState(null);
-
-  const addCat=()=>{
-    const t=newName.trim();
-    if(!t||local.find(c=>c.name===t))return;
-    setLocal(p=>[...p,{id:'cat-'+Date.now(),name:t}]);
-    setNewName('');
-  };
-  const removeCat=id=>setLocal(p=>p.filter(c=>c.id!==id));
-  const renameSave=()=>{
-    if(!editing||!editing.name.trim())return;
-    setLocal(p=>p.map(c=>c.id===editing.id?{...c,name:editing.name.trim()}:c));
-    setEditing(null);
-  };
-
-  const handleSave=()=>{
-    // Build a map of old name -> new name for any renamed categories
-    const renameMap={};
-    categories.forEach(orig=>{
-      const updated=local.find(l=>l.id===orig.id);
-      if(updated && updated.name!==orig.name){
-        renameMap[orig.name]=updated.name;
-      }
-    });
-    // Update all existing expenses that used a renamed category
-    if(Object.keys(renameMap).length>0){
-      setExpenses(prev=>prev.map(e=>
-        renameMap[e.category] ? {...e, category:renameMap[e.category]} : e
-      ));
-    }
-    setCategories(local);
-    onClose();
-  };
-
-  return(
-    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div className="modal">
-        <div className="modal-header"><span className="modal-title">Manage Categories</span><button className="btn btn-outline btn-sm" onClick={onClose}>✕</button></div>
-        <div className="modal-body">
-          <p style={{fontSize:12,color:'var(--muted)'}}>Click a name or "Rename" to edit. Renaming will update <strong>all existing expense records</strong> automatically.</p>
-          <div className="cat-list">
-            {local.map((c,i)=>(
-              <div key={c.id} className="cat-item">
-                <span className="cat-swatch" style={{background:CHART_COLORS[i%CHART_COLORS.length]}}></span>
-                {editing&&editing.id===c.id?(
-                  <input style={{flex:1,fontSize:13,padding:'2px 6px'}} value={editing.name} onChange={e=>setEditing(v=>({...v,name:e.target.value}))} onKeyDown={e=>{if(e.key==='Enter')renameSave();if(e.key==='Escape')setEditing(null);}} autoFocus/>
-                ):(
-                  <span className="cat-name" style={{cursor:'text'}} onClick={()=>setEditing({id:c.id,name:c.name})}>{c.name}</span>
-                )}
-                {editing&&editing.id===c.id?(
-                  <button className="btn btn-primary btn-sm" onClick={renameSave}>✓</button>
-                ):(
-                  <button className="btn btn-outline btn-sm" onClick={()=>setEditing({id:c.id,name:c.name})}>Rename</button>
-                )}
-                <button className="btn btn-danger btn-sm" onClick={()=>removeCat(c.id)}>✕</button>
-              </div>
-            ))}
-          </div>
-          <div className="cat-add-row">
-            <input type="text" placeholder="New category name..." value={newName} onChange={e=>setNewName(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addCat()}/>
-            <button className="btn btn-primary btn-sm" onClick={addCat} disabled={!newName.trim()}>+ Add</button>
-          </div>
-        </div>
-        <div className="modal-footer">
-          <button className="btn btn-outline" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary" onClick={handleSave}>Save changes</button>
         </div>
       </div>
     </div>
